@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sws-auto-bot"
+version = "0.1.0"
+description = "Automated Google Forms submission tool for UK SWS applications"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.40.0",
+    "pyyaml>=6.0.1",
+    "rapidfuzz>=3.5.0",
+    "pydantic>=2.5.0",
+    "click>=8.1.0",
+    "aiohttp>=3.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "ruff>=0.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

@@ -1,0 +1,104 @@
+full_name:
+  keywords: [nume, name, имя, фамилия, prenume, "full name", фио, "nume complet", "your name"]
+  patterns: ['nume\s*(si|și)?\s*prenume', '(first|last|full)\s*name', 'numele\s*complet', 'фамилия.*имя']
+  profile_key: personal.full_name
+
+first_name:
+  keywords: [prenume, "first name", "prenumele", "ваше имя"]
+  patterns: ['^prenume', '^first\s*name', '^имя$']
+  profile_key: personal.first_name
+
+last_name:
+  keywords: [nume, "last name", "nume de familie", "фамилия", surname]
+  patterns: ['^nume$', 'nume\s*de\s*familie', '^last\s*name', '^surname', '^фамили']
+  profile_key: personal.last_name
+
+date_of_birth:
+  keywords: [nasterii, nastere, birth, рождения, "data nasterii", "date of birth", "dob"]
+  patterns: ['data\s*na[sș]terii', 'date\s*of\s*birth', 'дата\s*рожд', '\bdob\b']
+  profile_key: personal.date_of_birth
+
+dob_day:
+  keywords: [zi, ziua, day, день]
+  patterns: ['\b(zi|ziua|day|день)\b']
+  profile_key: personal.date_of_birth_parts.day
+
+dob_month:
+  keywords: [luna, month, месяц]
+  patterns: ['\b(luna|month|месяц)\b']
+  profile_key: personal.date_of_birth_parts.month
+
+dob_year:
+  keywords: [an, anul, year, год]
+  patterns: ['\b(an|anul|year|год)\b']
+  profile_key: personal.date_of_birth_parts.year
+
+email:
+  keywords: [email, e-mail, mail, почта, "adresa email", "adresa de email", "your email"]
+  patterns: ['e-?mail', 'adresa\s*(de\s*)?e-?mail', 'электронн']
+  profile_key: contacts.email
+
+phone:
+  keywords: [telefon, phone, whatsapp, телефон, numar, "numar telefon", "phone number", mobil]
+  patterns: ['num[aă]r\s*(de\s*)?telefon', 'phone\s*number', 'whatsapp', 'номер\s*телефон']
+  profile_key: contacts.phone
+
+passport:
+  keywords: [pasaport, passport, паспорт, document, serie, "numar pasaport", "passport number"]
+  patterns: ['num[aă]r\s*pa[sș]aport', 'passport\s*number', 'серия.*паспорт', 'номер\s*паспорт']
+  profile_key: documents.passport_number
+
+passport_expiry:
+  keywords: [expirare, expiry, "valabil pana", "passport expiry", "срок действия", "действителен до"]
+  patterns: ['data\s*expir[aă]rii', 'expiry\s*date', 'valabil\s*p[aâ]n[aă]', 'срок\s*действ']
+  profile_key: documents.passport_expiry
+
+sex:
+  keywords: [sex, gen, пол, gender]
+  patterns: ['^sex$', '^gen$', '^пол$', '^gender$']
+  profile_key: personal.sex
+
+nationality:
+  keywords: [cetatenie, nationality, гражданство, nationalitate, "tara de origine"]
+  patterns: ['cet[aă][tț]enie', 'nationality', 'гражданств']
+  profile_key: personal.nationality
+
+city:
+  keywords: [oras, city, город, localitate, localitatea, domiciliu]
+  patterns: ['ora[sș]', '\bcity\b', 'город', 'localitat', 'domiciliu']
+  profile_key: personal.city
+
+country:
+  keywords: [tara, country, страна, "tara de resedinta"]
+  patterns: ['[tț]ar[aă]', '\bcountry\b', 'стран']
+  profile_key: personal.country
+
+experience_agriculture:
+  keywords: [experienta, experience, опыт, agricultura, agricol, "ai experienta", "agricultural experience"]
+  patterns: ['experi[ei]n[tț][aă].*agri', 'agri.*experi', 'опыт.*сельск', 'опыт.*ферм']
+  profile_key: work.experience_agriculture_text
+
+experience_uk:
+  keywords: ["lucrat in uk", "worked in uk", "работал в англии", "fost in uk", "marea britanie", "ai mai lucrat"]
+  patterns: ['(lucrat|fost|mers).*(uk|anglia|britanie)', 'worked.*(uk|britain)', 'работал.*(англи|великобрит)']
+  profile_key: work.experience_uk_text
+
+available_from:
+  keywords: [cand, when, когда, disponibil, available, pleca, data, "cand poti", "start date"]
+  patterns: ['c[aâ]nd\s*(po[tț]i|e[sș]ti|pleci)', 'when.*(available|start|leave)', 'когда.*(готов|можете|выезд)']
+  profile_key: work.available_from
+
+apply_type:
+  keywords: [singur, cuplu, alone, couple, "singur sau in cuplu", "apply alone"]
+  patterns: ['singur.*cuplu', 'alone.*couple', 'один.*пар']
+  profile_key: work.apply_alone_text
+
+english_level:
+  keywords: [engleza, english, английск, nivel, level, "limba engleza", "english level"]
+  patterns: ['nivel.*englez', 'english.*level', 'уровень.*англ', 'знание.*англ']
+  profile_key: work.english_level
+
+about:
+  keywords: [despre, about, "о себе", detalii, details, informatii, "alte informatii", comments]
+  patterns: ['despre\s*(tine|dvs|dumneavoastra)', 'about\s*(you|yourself)', 'о\s*себе', 'detalii\s*suplimentare']
+  profile_key: about.ro

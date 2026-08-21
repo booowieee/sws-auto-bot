@@ -1,0 +1,37 @@
+personal:
+  first_name: "JOHN"
+  last_name: "DOE"
+  full_name: "JOHN DOE"
+  date_of_birth: "01/01/2000"
+  date_of_birth_parts:
+    day: "01"
+    month: "01"
+    year: "2000"
+  sex: "masculin"
+  nationality: "moldoveneasca"
+  city: "Chisinau"
+  country: "Moldova"
+
+documents:
+  passport_number: "P00000000"
+  passport_expiry: "01/01/2030"
+
+contacts:
+  phone: "+1234567890"
+  whatsapp: "+1234567890"
+  email: "user@example.com"
+
+work:
+  experience_agriculture: true
+  experience_agriculture_text: "Da"
+  experience_uk: false
+  experience_uk_text: "Nu"
+  available_from: "April 2027"
+  apply_alone: true
+  apply_alone_text: "Singur"
+  english_level: "incepator"
+
+about:
+  ro: "Sunt o persoana responsabila, conditie fizica buna, pregatit pentru munca in agricultura."
+  en: "Responsible person, good physical shape, ready for agricultural work."
+  ru: "Ответственный, хорошая физическая форма, готов к работе на ферме."

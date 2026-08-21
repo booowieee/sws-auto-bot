@@ -1,0 +1,15 @@
+services:
+  sws-auto-bot:
+    build: .
+    container_name: sws-auto-bot
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - ./config/profile.yaml:/app/config/profile.yaml:ro
+      - ./config/synonyms.yaml:/app/config/synonyms.yaml:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    ipc: host
+    environment:
+      - HEADLESS=true

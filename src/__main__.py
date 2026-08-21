@@ -1,0 +1,219 @@
+import asyncio
+import sys
+import time
+from datetime import datetime, UTC
+from pathlib import Path
+from typing import List, Optional
+import click
+
+from src.analyzer import FormAnalyzer
+from src.browser import BrowserManager
+from src.config import Config, ensure_directories, load_profile, load_synonyms
+from src.filler import FormFiller
+from src.logger import logger
+from src.matcher import FieldMatcher
+from src.models import ExecutionReport, FormStatus
+from src.reporter import ExecutionReporter
+
+
+async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool] = None) -> int:
+    """Executes the full automated form filling pipeline."""
+    start_time = time.time()
+    ensure_directories()
+
+    profile = load_profile()
+    synonyms = load_synonyms()
+    matcher = FieldMatcher(profile, synonyms)
+
+    browser_mgr = BrowserManager(headless=headless)
+
+    async with browser_mgr as (context, page):
+        reporter = ExecutionReporter(page)
+        report = ExecutionReport(
+            url=url,
+            timestamp=datetime.now(UTC).isoformat(),
+            status=FormStatus.FAILED,
+        )
+
+        try:
+            logger.info(f"Navigating to Google Form: {url}")
+            await page.goto(url, wait_until="networkidle")
+
+            # Milestone 1: Form loaded
+            await reporter.capture_milestone("01_form_loaded")
+
+            # Check if form is closed
+            is_closed, close_reason = await FormAnalyzer.is_form_closed(page)
+            if is_closed:
+                logger.error(f"Form is CLOSED: {close_reason}")
+                report.status = FormStatus.CLOSED
+                report.error_message = f"Form is closed: {close_reason}"
+                report.duration_sec = time.time() - start_time
+                reporter.save_json_log(report)
+                await reporter.send_telegram_report(report)
+                return 1
+
+            filler = FormFiller(page, matcher)
+            all_filled_records = []
+            page_index = 1
+
+            # Multi-page progression loop
+            while True:
+                logger.info(f"Processing form section #{page_index}...")
+                matches, unmatched_req = await filler.fill_current_section()
+
+                for m in matches:
+                    all_filled_records.append({
+                        "label": m.field.label,
+                        "type": m.field.field_type.value,
+                        "matched_key": m.matched_key,
+                        "value": str(m.resolved_value or m.selected_option or ""),
+                        "method": m.method.value,
+                    })
+
+                if unmatched_req:
+                    unmatched_labels = [f.label for f in unmatched_req]
+                    err_msg = f"Cannot proceed: {len(unmatched_req)} required field(s) unmatched: {unmatched_labels}"
+                    logger.error(err_msg)
+                    report.unmatched_required_fields = unmatched_labels
+                    report.error_message = err_msg
+                    await reporter.capture_milestone(f"section_{page_index}_unmatched_error")
+                    break
+
+                nav_btn, nav_type = await filler.find_navigation_button()
+
+                if nav_type == "next" and nav_btn:
+                    logger.info(f"Navigating to next section from section #{page_index}...")
+                    await nav_btn.click()
+                    await asyncio.sleep(1.5)
+                    await page.wait_for_load_state("networkidle")
+                    page_index += 1
+                    continue
+                else:
+                    break
+
+            report.total_fields = len(all_filled_records)
+            report.filled_fields = all_filled_records
+
+            # If stopped due to unmatched required fields, bail out before submit
+            if report.unmatched_required_fields:
+                report.status = FormStatus.FAILED
+                report.duration_sec = time.time() - start_time
+                reporter.save_json_log(report)
+                await reporter.send_telegram_report(report)
+                return 1
+
+            # Milestone 2: Form completely filled
+            await reporter.capture_milestone("02_form_filled")
+
+            if is_test:
+                logger.info("Test mode enabled: skipping Submit button click.")
+                report.status = FormStatus.DRY_RUN
+                report.is_submitted = False
+                report.duration_sec = time.time() - start_time
+                reporter.save_json_log(report)
+                await reporter.send_telegram_report(report)
+                return 0
+
+            # Submit form
+            submit_ok = await filler.click_submit()
+            if not submit_ok:
+                report.status = FormStatus.FAILED
+                report.error_message = "Failed to locate or click Submit button."
+                await reporter.capture_milestone("03_submit_failed")
+                report.duration_sec = time.time() - start_time
+                reporter.save_json_log(report)
+                await reporter.send_telegram_report(report)
+                return 1
+
+            # Verify submission
+            is_success, status_msg = await filler.verify_submission_status()
+            await reporter.capture_milestone("03_form_submitted")
+
+            if is_success:
+                logger.info(f"Form submission SUCCESS: {status_msg}")
+                report.status = FormStatus.SUCCESS
+                report.is_submitted = True
+            else:
+                logger.error(f"Form submission FAILED verification: {status_msg}")
+                report.status = FormStatus.FAILED
+                report.error_message = status_msg
+
+            report.duration_sec = time.time() - start_time
+            reporter.save_json_log(report)
+            await reporter.send_telegram_report(report)
+
+            return 0 if is_success else 1
+
+        except Exception as e:
+            logger.exception(f"Unhandled exception during autofill execution: {e}")
+            await reporter.capture_milestone("error_unhandled")
+            report.status = FormStatus.FAILED
+            report.error_message = str(e)
+            report.duration_sec = time.time() - start_time
+            reporter.save_json_log(report)
+            await reporter.send_telegram_report(report)
+            return 1
+
+
+async def run_login_flow() -> None:
+    """Launches headed browser for one-time manual Google authentication."""
+    ensure_directories()
+    browser_mgr = BrowserManager(headless=False)
+
+    logger.info("Opening browser for manual Google sign-in...")
+    logger.info("Log in to your Google Account. Once done, close the browser window.")
+
+    async with browser_mgr as (context, page):
+        await page.goto("https://accounts.google.com/", wait_until="domcontentloaded")
+        try:
+            while not page.is_closed():
+                await asyncio.sleep(1)
+        except Exception:
+            pass
+
+    logger.info("Google authentication session saved to persistent profile.")
+
+
+async def run_session_check() -> int:
+    """Verifies whether the persistent Google profile is currently signed in."""
+    ensure_directories()
+    browser_mgr = BrowserManager(headless=True)
+
+    async with browser_mgr as (context, page):
+        is_active = await BrowserManager.check_google_session(page)
+        if is_active:
+            logger.info("Active Google session confirmed.")
+            return 0
+        else:
+            logger.warning("No active Google session found. Please run with --login.")
+            return 1
+
+
+@click.command()
+@click.option("--url", "-u", type=str, help="Target Google Form URL to fill and submit.")
+@click.option("--test", is_flag=True, help="Test mode: fills form, captures screenshots, but does not submit.")
+@click.option("--login", is_flag=True, help="One-time manual Google authentication in headed browser.")
+@click.option("--check-session", is_flag=True, help="Checks whether persistent Google session is active.")
+@click.option("--headed", is_flag=True, help="Run browser in visible (headed) mode for debugging.")
+def main(url: Optional[str], test: bool, login: bool, check_session: bool, headed: bool):
+    """SWS Auto-Fill Bot: Automated Google Forms submission tool."""
+    if login:
+        asyncio.run(run_login_flow())
+        return
+
+    if check_session:
+        exit_code = asyncio.run(run_session_check())
+        sys.exit(exit_code)
+
+    if not url:
+        click.echo("Error: Please provide a Google Form URL using --url or choose --login / --check-session")
+        sys.exit(1)
+
+    headless_mode = False if headed else None
+    exit_code = asyncio.run(run_autofill(url=url, is_test=test, headless=headless_mode))
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()
