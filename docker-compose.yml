@@ -6,10 +6,12 @@ services:
     env_file:
       - .env
     volumes:
-      - ./config/profile.yaml:/app/config/profile.yaml:ro
-      - ./config/synonyms.yaml:/app/config/synonyms.yaml:ro
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - .:/app
+      - /app/__pycache__
     ipc: host
+    ulimits:
+      core:
+        soft: 0
+        hard: 0
     environment:
       - HEADLESS=true

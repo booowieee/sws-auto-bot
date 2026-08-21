@@ -42,6 +42,8 @@ logs/*
 !logs/.gitkeep
 screenshots/*
 !screenshots/.gitkeep
+core.*
+core
 
 # OS / Editor files
 .DS_Store

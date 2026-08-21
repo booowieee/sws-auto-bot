@@ -70,7 +70,6 @@ class BrowserManager:
             timezone_id="Europe/Bucharest",
             permissions=["geolocation"],
             ignore_https_errors=True,
-            channel="chromium",
         )
 
         page = self._context.pages[0] if self._context.pages else await self._context.new_page()

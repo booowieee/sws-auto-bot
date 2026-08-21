@@ -9,7 +9,7 @@ description = "Automated Google Forms submission tool for UK SWS applications"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "playwright>=1.40.0",
+    "playwright==1.49.1",
     "pyyaml>=6.0.1",
     "rapidfuzz>=3.5.0",
     "pydantic>=2.5.0",

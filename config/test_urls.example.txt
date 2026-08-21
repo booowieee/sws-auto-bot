@@ -1,0 +1,5 @@
+# Paste your generated Google Forms URLs below (one per line, or Title: URL)
+# Example:
+# QA-01: https://docs.google.com/forms/d/e/1FAIpQLSc.../viewform
+# QA-02: https://docs.google.com/forms/d/e/1FAIpQLSd.../viewform
+# QA-03: https://docs.google.com/forms/d/e/1FAIpQLSe.../viewform

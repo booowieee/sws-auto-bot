@@ -1,104 +1,1077 @@
-full_name:
-  keywords: [nume, name, имя, фамилия, prenume, "full name", фио, "nume complet", "your name"]
-  patterns: ['nume\s*(si|și)?\s*prenume', '(first|last|full)\s*name', 'numele\s*complet', 'фамилия.*имя']
-  profile_key: personal.full_name
+# ==============================================================================
+# SWS AUTO-BOT SYNONYMS & FIELD RECOGNITION DICTIONARY
+# 100% Equal Parity for Romanian, English, and Russian Recruitment Forms
+# ==============================================================================
 
-first_name:
-  keywords: [prenume, "first name", "prenumele", "ваше имя"]
-  patterns: ['^prenume', '^first\s*name', '^имя$']
-  profile_key: personal.first_name
+# ------------------------------------------------------------------------------
+# 1. EMERGENCY CONTACTS & KIN (Must precede generic name / phone)
+# ------------------------------------------------------------------------------
+emergency_name:
+  keywords:
+    - "persoana de contact in caz de urgenta"
+    - "nume persoana de contact"
+    - "emergency contact name"
+    - "emergency contact person"
+    - "emergency contact person full name"
+    - "emergency contact"
+    - "emergency kin"
+    - "next of kin"
+    - "next of kin name"
+    - "full name of emergency contact"
+    - "контактное лицо"
+    - "контактное лицо на случай чс"
+    - "фио контактного лица"
+    - "экстренный контакт"
+    - "имя родственника для связи"
+  patterns:
+    - 'persoan[aă]\s*(de\s*)?contact.*urgen[tț]'
+    - 'emergency\s*contact(\s*person|\s*name)?'
+    - 'emergency\s*kin'
+    - 'next\s*of\s*kin'
+    - 'контактн.*лиц.*чс'
+    - 'экстренн.*контакт'
+    - 'контактн.*лиц'
+  profile_key: contacts.emergency_contact.name
 
-last_name:
-  keywords: [nume, "last name", "nume de familie", "фамилия", surname]
-  patterns: ['^nume$', 'nume\s*de\s*familie', '^last\s*name', '^surname', '^фамили']
-  profile_key: personal.last_name
+emergency_relationship:
+  keywords:
+    - "grad de rudenie"
+    - "relationship to applicant"
+    - "emergency relationship"
+    - "kin relationship"
+    - "relationship to candidate"
+    - "relationship with contact"
+    - "степень родства"
+    - "кем вам приходится"
+    - "родственная связь"
+  patterns:
+    - 'grad.*rudenie'
+    - 'relationship.*(emergency|applicant|candidate|contact|kin)'
+    - 'степень\s*родств'
+    - 'кем\s*(вам\s*)?приходит'
+  profile_key: contacts.emergency_contact.relationship
 
-date_of_birth:
-  keywords: [nasterii, nastere, birth, рождения, "data nasterii", "date of birth", "dob"]
-  patterns: ['data\s*na[sș]terii', 'date\s*of\s*birth', 'дата\s*рожд', '\bdob\b']
-  profile_key: personal.date_of_birth
+emergency_phone:
+  keywords:
+    - "telefon persoana de contact"
+    - "telefon de urgenta"
+    - "emergency phone"
+    - "emergency contact phone"
+    - "emergency contact phone number"
+    - "next of kin phone"
+    - "emergency mobile"
+    - "телефон контактного лица"
+    - "телефон на случай чс"
+    - "экстренный телефон"
+    - "номер телефона родственника"
+  patterns:
+    - 'telef[o|n].*urgen[tț]'
+    - 'emergency.*(phone|mobile|number|tel)'
+    - 'next\s*of\s*kin.*phone'
+    - 'телефон.*(контактн|чс|экстренн|родствен)'
+  profile_key: contacts.emergency_contact.phone
 
+# ------------------------------------------------------------------------------
+# 2. PASSPORT DETAILS & EXPIRY (Must precede generic passport)
+# ------------------------------------------------------------------------------
+passport_expiry:
+  keywords:
+    - "data expirarii pasaportului"
+    - "passport expiry date"
+    - "passport expiration date"
+    - "passport expiry"
+    - "data expirare pasaport"
+    - "valabil pana"
+    - "passport valid until"
+    - "expiry date of travel document"
+    - "срок действия паспорта"
+    - "дата окончания срока действия"
+    - "действителен до"
+    - "дата окончания действия паспорта"
+  patterns:
+    - 'data\s*expir[aă]r[ii]?'
+    - 'expiry\s*date'
+    - 'expiration\s*date'
+    - 'valid\s*until'
+    - 'valabil\s*p[aâ]n[aă]'
+    - 'срок\s*действ'
+    - 'действителен\s*до'
+  profile_key: documents.passport_expiry
+
+passport_issue_date:
+  keywords:
+    - "data eliberarii pasaportului"
+    - "data emiterii pasaportului"
+    - "passport issue date"
+    - "date of issue"
+    - "passport issued on"
+    - "travel document issue date"
+    - "дата выдачи паспорта"
+    - "когда выдан паспорт"
+    - "дата оформления паспорта"
+  patterns:
+    - 'data\s*(eliber[aă]rii|emiterii)'
+    - 'issue\s*date'
+    - 'date\s*of\s*issue'
+    - 'issued\s*on'
+    - 'дата\s*выдачи'
+    - 'когда\s*выдан'
+  profile_key: documents.passport_issue_date
+
+passport_issuing_authority:
+  keywords:
+    - "organul emitent"
+    - "issuing authority"
+    - "authority of issue"
+    - "country of issue"
+    - "issuing country"
+    - "place of issue"
+    - "кем выдан паспорт"
+    - "орган выдачи паспорта"
+    - "орган выдачи"
+  patterns:
+    - 'organ(ul)?\s*emitent'
+    - 'issuing\s*(authority|country)'
+    - 'authority\s*of\s*issue'
+    - 'place\s*of\s*issue'
+    - 'кем\s*выдан'
+    - 'орган\s*выдачи'
+  profile_key: documents.passport_issuing_authority
+
+id_card:
+  keywords:
+    - buletin
+    - "buletin de identitate"
+    - "carte de identitate"
+    - "national id"
+    - "id card"
+    - "national identity card"
+    - "internal passport"
+    - "удостоверение личности"
+    - "внутренний паспорт"
+    - "булетин"
+    - "серия и номер булетина"
+  patterns:
+    - 'buletin(\s*de\s*identitate)?'
+    - 'carte\s*de\s*identitate'
+    - 'national\s*id'
+    - 'id\s*card'
+    - 'identity\s*card'
+    - 'удостоверен.*личност'
+    - 'внутренн.*паспорт'
+  profile_key: documents.id_card_number
+
+passport:
+  keywords:
+    - pasaport
+    - passport
+    - pasport
+    - паспорт
+    - "numar pasaport"
+    - "numar pasport"
+    - "passport number"
+    - "passport id"
+    - "passport id number"
+    - "travel document number"
+    - "international passport"
+    - "seria pasaportului"
+    - "seria pasaportului moldovenesc"
+    - "serie pasaport"
+    - "documentul de calatorie"
+    - "seria actului de calatorie"
+    - "national passport number"
+    - "pasaport biometric"
+    - "biometric passport number"
+    - "загранпаспорт"
+    - "номер загранпаспорта"
+    - "номер и серия загранпаспорта"
+    - "серия и номер заграничного паспорта"
+    - "detineti pasaport biometric"
+  patterns:
+    - 'num[aă]r\s*pa[sș]a?p[o|a]rt'
+    - 'seri[ae].*pa[sș]a?p[o|a]rt'
+    - 'passport\s*(id|number|no)'
+    - 'biometric\s*passport'
+    - 'travel\s*document\s*number'
+    - 'international\s*passport'
+    - 'national\s*passport'
+    - 'document(ul)?\s*de\s*c[aă]l[aă]torie'
+    - 'act(ului)?\s*de\s*c[aă]l[aă]torie'
+    - 'pa[sș]a?p[o|a]rt\s*biometric'
+    - 'загранпаспорт'
+    - 'заграничн.*паспорт'
+    - 'серия.*паспорт'
+    - 'номер.*паспорт'
+    - '^pa[sș]a?port$'
+    - '^passport$'
+  profile_key: documents.passport_number
+
+# ------------------------------------------------------------------------------
+# 3. DATE OF BIRTH & PARTS
+# ------------------------------------------------------------------------------
 dob_day:
-  keywords: [zi, ziua, day, день]
-  patterns: ['\b(zi|ziua|day|день)\b']
+  keywords:
+    - "ziua nasterii"
+    - "ziua (01-31)"
+    - "birth day"
+    - "day of birth"
+    - "day (dd)"
+    - "день рождения"
+    - "день (чч)"
+    - "число рождения"
+  patterns:
+    - '^ziua(\s*\(01-31\))?$'
+    - 'ziua\s*na[sș]terii'
+    - '^day(\s*\(.*\))?$'
+    - 'birth\s*day'
+    - '^день(\s*рождения)?$'
+    - '^число(\s*рождения)?$'
   profile_key: personal.date_of_birth_parts.day
 
 dob_month:
-  keywords: [luna, month, месяц]
-  patterns: ['\b(luna|month|месяц)\b']
+  keywords:
+    - "luna nasterii"
+    - "luna (01-12)"
+    - "birth month"
+    - "month of birth"
+    - "month (mm)"
+    - "месяц рождения"
+    - "месяц (мм)"
+  patterns:
+    - '^luna(\s*\(01-12\))?$'
+    - 'luna\s*na[sș]terii'
+    - '^month(\s*\(.*\))?$'
+    - 'birth\s*month'
+    - '^месяц(\s*рождения)?$'
   profile_key: personal.date_of_birth_parts.month
 
 dob_year:
-  keywords: [an, anul, year, год]
-  patterns: ['\b(an|anul|year|год)\b']
+  keywords:
+    - "anul nasterii"
+    - "anul (ex: 1998)"
+    - "birth year"
+    - "year of birth"
+    - "year (yyyy)"
+    - "год рождения"
+    - "год (гггг)"
+  patterns:
+    - '^anul(\s*\(.*\))?$'
+    - 'anul\s*na[sș]terii'
+    - '^year(\s*\(.*\))?$'
+    - 'birth\s*year'
+    - '^год(\s*рождения)?$'
   profile_key: personal.date_of_birth_parts.year
 
-email:
-  keywords: [email, e-mail, mail, почта, "adresa email", "adresa de email", "your email"]
-  patterns: ['e-?mail', 'adresa\s*(de\s*)?e-?mail', 'электронн']
-  profile_key: contacts.email
+date_of_birth:
+  keywords:
+    - nasterii
+    - nasteri
+    - nastere
+    - birth
+    - рождения
+    - "data nasterii"
+    - "data nasteri"
+    - "date of birth"
+    - "birth date"
+    - "dob"
+    - "cand v-ati nascut"
+    - "cati ani aveti"
+    - "ziua de nastere"
+    - "data nasterii titularului"
+    - "число, месяц и год рождения"
+    - "applicant dob"
+    - "data completa a nasterii"
+    - "полная дата рождения"
+    - "когда вы родились"
+    - "дата вашего рождения"
+  patterns:
+    - 'data\s*na[sș]ter[ii]?'
+    - 'date\s*of\s*birth'
+    - 'birth\s*date'
+    - '\bdob\b'
+    - 'c[aâ]nd\s*v-a[tț]i\s*n[aă]scut'
+    - 'c[aâ][tț]i\s*ani\s*ave[tț]i'
+    - 'ziua\s*de\s*na[sș]tere'
+    - 'data.*complet[aă].*na[sș]ter'
+    - 'дата\s*рожд'
+    - 'число.*месяц.*год.*рожд'
+    - 'когда\s*вы\s*родились'
+  profile_key: personal.date_of_birth
 
-phone:
-  keywords: [telefon, phone, whatsapp, телефон, numar, "numar telefon", "phone number", mobil]
-  patterns: ['num[aă]r\s*(de\s*)?telefon', 'phone\s*number', 'whatsapp', 'номер\s*телефон']
-  profile_key: contacts.phone
+place_of_birth:
+  keywords:
+    - "locul nasterii"
+    - "place of birth"
+    - "town of birth"
+    - "city of birth"
+    - "country of birth"
+    - "birthplace"
+    - "city and country of birth"
+    - "town/city and country"
+    - "место рождения"
+    - "город рождения"
+    - "страна рождения"
+    - "где вы родились"
+  patterns:
+    - 'loc(ul)?\s*na[sș]terii'
+    - 'place\s*of\s*birth'
+    - '(town|city|country)\s*of\s*birth'
+    - 'birthplace'
+    - 'место\s*рожд'
+    - 'город\s*рожд'
+    - 'где\s*(вы\s*)?родились'
+  profile_key: personal.place_of_birth
 
-passport:
-  keywords: [pasaport, passport, паспорт, document, serie, "numar pasaport", "passport number"]
-  patterns: ['num[aă]r\s*pa[sș]aport', 'passport\s*number', 'серия.*паспорт', 'номер\s*паспорт']
-  profile_key: documents.passport_number
+# ------------------------------------------------------------------------------
+# 4. NAMES
+# ------------------------------------------------------------------------------
+patronymic:
+  keywords:
+    - patronimic
+    - "patronymic"
+    - "patronymic name"
+    - "отчество"
+    - "ваше отчество"
+    - "al doilea prenume"
+    - "middle name"
+  patterns:
+    - 'patronimic'
+    - 'al\s*doilea\s*prenume'
+    - 'middle\s*name'
+    - 'отчеств'
+  profile_key: personal.patronymic
 
-passport_expiry:
-  keywords: [expirare, expiry, "valabil pana", "passport expiry", "срок действия", "действителен до"]
-  patterns: ['data\s*expir[aă]rii', 'expiry\s*date', 'valabil\s*p[aâ]n[aă]', 'срок\s*действ']
-  profile_key: documents.passport_expiry
+first_name:
+  keywords:
+    - prenume
+    - "first name"
+    - "given name"
+    - "forename"
+    - "prenumele"
+    - "ваше имя"
+    - "имя"
+    - "prenume (first name)"
+  patterns:
+    - '^prenume'
+    - '^first\s*name'
+    - '^given\s*name'
+    - '^forename'
+    - '^имя$'
+  profile_key: personal.first_name
 
+last_name:
+  keywords:
+    - nume
+    - "last name"
+    - "family name"
+    - "surname"
+    - "nume de familie"
+    - "фамилия"
+    - "ваша фамилия"
+    - "nume de familie (surname)"
+  patterns:
+    - '^nume$'
+    - 'nume\s*de\s*familie'
+    - '^(last|family)\s*name'
+    - '^surname'
+    - '^фамили'
+  profile_key: personal.last_name
+
+full_name:
+  keywords:
+    - nume
+    - name
+    - имя
+    - фамилия
+    - prenume
+    - "full name"
+    - "full legal name"
+    - "applicant full name"
+    - "candidate full name"
+    - "your full name"
+    - фио
+    - "фио полностью"
+    - "полное имя"
+    - "фамилия имя"
+    - "nume complet"
+    - "your name"
+    - "numele complet"
+    - "cum va striga lumea"
+    - "cum va numiti"
+    - "cine sunteti"
+    - "numele si prenum"
+    - "identitatea titularului"
+    - "fio"
+    - "applicant full legal name"
+    - "nume si prenume candidat"
+    - "numele si prenumele d-voastra"
+    - "nume prenume"
+  patterns:
+    - 'nume\s*(si|și)?\s*prenum[e]?'
+    - '(first|last|full)(\s+legal)?\s+name'
+    - 'full\s*name'
+    - 'numele\s*complet'
+    - 'cum\s*v[aă]\s*(strig[aă]|numi[tț]i)'
+    - 'cine\s*sunte[tț]i'
+    - 'identitatea\s*titularului'
+    - 'applicant\s*full\s*legal\s*name'
+    - 'candidate\s*full\s*name'
+    - 'фамилия.*имя'
+    - 'фио'
+    - 'полное\s*имя'
+  profile_key: personal.full_name
+
+# ------------------------------------------------------------------------------
+# 5. DEMOGRAPHICS & RESIDENCE
+# ------------------------------------------------------------------------------
 sex:
-  keywords: [sex, gen, пол, gender]
-  patterns: ['^sex$', '^gen$', '^пол$', '^gender$']
+  keywords:
+    - sex
+    - gen
+    - пол
+    - gender
+    - "sunteti barbat sau femeie"
+    - "sexul d-voastra"
+    - "genul biologic"
+    - "selectati sexul"
+    - "ваш пол"
+    - "укажите ваш пол"
+    - "your gender"
+    - "select gender"
+  patterns:
+    - '^sex'
+    - 'sexul'
+    - '^gen'
+    - 'genul'
+    - 'b[aă]rbat\s*sau\s*femeie'
+    - '^пол$'
+    - 'ваш\s*пол'
+    - '^gender'
   profile_key: personal.sex
 
+marital_status:
+  keywords:
+    - "stare civila"
+    - "marital status"
+    - "civil status"
+    - "relationship status"
+    - "семейное положение"
+    - "семейный статус"
+    - casatorit
+    - necasatorit
+    - холост
+    - женат
+  patterns:
+    - 'stare\s*civil[aă]'
+    - 'marital\s*status'
+    - 'civil\s*status'
+    - 'семейн.*положен'
+    - 'семейн.*статус'
+  profile_key: personal.marital_status
+
 nationality:
-  keywords: [cetatenie, nationality, гражданство, nationalitate, "tara de origine"]
-  patterns: ['cet[aă][tț]enie', 'nationality', 'гражданств']
+  keywords:
+    - cetatenie
+    - nationality
+    - citizenship
+    - country of citizenship
+    - гражданство
+    - nationalitate
+    - "tara de origine"
+    - "ваше гражданство"
+  patterns:
+    - 'cet[aă][tț]enie'
+    - 'nationality'
+    - 'citizenship'
+    - 'гражданств'
   profile_key: personal.nationality
 
+address_street:
+  keywords:
+    - strada
+    - street
+    - street address
+    - house
+    - building
+    - улица
+    - дом
+    - "adresa (strada)"
+    - "улица и номер дома"
+  patterns:
+    - 'strad[aă]'
+    - '\bstreet\b'
+    - 'улиц'
+    - 'номер\s*дома'
+  profile_key: contacts.address_street
+
+address_region:
+  keywords:
+    - judet
+    - raion
+    - region
+    - district
+    - county
+    - province
+    - state
+    - область
+    - район
+    - край
+  patterns:
+    - 'jude[tț]'
+    - 'raion'
+    - 'district'
+    - 'county'
+    - 'province'
+    - 'област'
+    - 'район'
+  profile_key: contacts.address_region
+
+postal_code:
+  keywords:
+    - "cod postal"
+    - "postal code"
+    - "postcode"
+    - "zip code"
+    - "zip"
+    - "индекс"
+    - "почтовый индекс"
+  patterns:
+    - 'cod\s*po[sș]tal'
+    - 'postal\s*code'
+    - 'postcode'
+    - 'zip\s*code'
+    - 'индекс'
+    - 'почтов.*индекс'
+  profile_key: contacts.postal_code
+
 city:
-  keywords: [oras, city, город, localitate, localitatea, domiciliu]
-  patterns: ['ora[sș]', '\bcity\b', 'город', 'localitat', 'domiciliu']
+  keywords:
+    - oras
+    - city
+    - town
+    - village
+    - город
+    - населенный пункт
+    - localitate
+    - localitatea
+    - domiciliu
+    - "oras / sat"
+    - "oras / localitate"
+    - "город / село"
+  patterns:
+    - 'ora[sș]'
+    - '\bcity\b'
+    - '\btown\b'
+    - 'город'
+    - 'localitat'
+    - 'населенн.*пункт'
   profile_key: personal.city
 
 country:
-  keywords: [tara, country, страна, "tara de resedinta"]
-  patterns: ['[tț]ar[aă]', '\bcountry\b', 'стран']
+  keywords:
+    - tara
+    - country
+    - country of residence
+    - permanent residence country
+    - страна
+    - страна проживания
+    - "tara de resedinta"
+    - "tara de domiciliu"
+  patterns:
+    - '[tț]ar[aă]'
+    - '\bcountry\b'
+    - 'country\s*of\s*residence'
+    - 'стран'
   profile_key: personal.country
 
-experience_agriculture:
-  keywords: [experienta, experience, опыт, agricultura, agricol, "ai experienta", "agricultural experience"]
-  patterns: ['experi[ei]n[tț][aă].*agri', 'agri.*experi', 'опыт.*сельск', 'опыт.*ферм']
-  profile_key: work.experience_agriculture_text
+address_full:
+  keywords:
+    - "adresa de domiciliu"
+    - "adresa completa"
+    - "adresa exacta"
+    - "full address"
+    - "home address"
+    - "full residential address"
+    - "full home address"
+    - "residential address"
+    - "adresa de domiciliu exacta"
+    - "adresa exacta de domiciliu"
+    - "adresa"
+    - "адрес проживания"
+    - "адрес регистрации"
+    - "полный адрес"
+    - "фактический адрес проживания"
+    - "домашний адрес"
+  patterns:
+    - 'adres[aă]\s*(de\s*)?(domiciliu|complet[aă]|exact[aă]|re[sș]edin[tț][aă])'
+    - 'full\s*address'
+    - 'home\s*address'
+    - 'residential\s*address'
+    - 'адрес\s*(проживан|регистрац|места\s*жительств)'
+    - 'полн.*адрес'
+    - 'домашн.*адрес'
+    - '^adres[aă]$'
+    - '^address$'
+    - '^адрес$'
+  profile_key: contacts.address_full
 
+# ------------------------------------------------------------------------------
+# 6. CONTACTS & EMAIL
+# ------------------------------------------------------------------------------
+email:
+  keywords:
+    - email
+    - e-mail
+    - mail
+    - emal
+    - почта
+    - "email address"
+    - "your email"
+    - "contact email"
+    - "adresa email"
+    - "adresa de email"
+    - "adres de emal"
+    - "posta electronica"
+    - "poșta electronică"
+    - "casuta postala"
+    - "adresa oficiala de corespondenta"
+    - "электронный почтовый ящик"
+    - "электронная почта"
+    - "адрес электронной почты"
+    - "email de contact"
+    - "reintroduceti adresa de email"
+  patterns:
+    - 'e-?ma[i|l]'
+    - 'adres[aă]?\s*(de\s*)?e-?ma[i|l]'
+    - 'po[sș]t[aă]\s*electronic[aă]'
+    - 'c[aă]su[tț]a\s*po[sș]tal[aă]'
+    - 'электронн.*почт'
+    - 'почтов.*ящик'
+  profile_key: contacts.email
+
+phone:
+  keywords:
+    - telefon
+    - phone
+    - telephone
+    - whatsapp
+    - телефон
+    - mobil
+    - mobile
+    - viber
+    - telefn
+    - "phone number"
+    - "mobile number"
+    - "contact telephone"
+    - "mobile phone"
+    - "whatsapp number"
+    - "numar telefon"
+    - "numar telefn"
+    - "numar de telefon"
+    - "pe ce numar va gasim"
+    - "canal principal de telecomunicatie"
+    - "contact mobile"
+    - "unde va putem apela"
+    - "основной номер для связи"
+    - "номер телефона"
+    - "номер мобильного телефона"
+    - "номер ватсап"
+    - "контактный телефон"
+    - "contact telefon"
+    - "telefon whatsapp"
+  patterns:
+    - 'num[aă]r\s*(de\s*)?telef[o|n]'
+    - 'phone\s*(number)?'
+    - 'telephone'
+    - 'whatsapp'
+    - 'viber'
+    - 'mobil[e]?'
+    - 'telecomunica[tț]ie'
+    - 'номер\s*телефон'
+    - 'номер\s*для\s*связи'
+    - 'контактн.*телефон'
+    - 'unde\s*v[aă]\s*putem\s*apela'
+  profile_key: contacts.phone
+
+# ------------------------------------------------------------------------------
+# 7. WORK, CROPS, VISA HISTORY & PREFERENCES
+# ------------------------------------------------------------------------------
 experience_uk:
-  keywords: ["lucrat in uk", "worked in uk", "работал в англии", "fost in uk", "marea britanie", "ai mai lucrat"]
-  patterns: ['(lucrat|fost|mers).*(uk|anglia|britanie)', 'worked.*(uk|britain)', 'работал.*(англи|великобрит)']
+  keywords:
+    - "lucrat in uk"
+    - "worked in uk"
+    - "работал в англии"
+    - "работали в великобритании"
+    - "были в англии"
+    - "fost in uk"
+    - "marea britanie"
+    - "ai mai lucrat in uk"
+    - "held a uk visa"
+    - "held a uk sws visa"
+    - "worked in the uk before"
+    - "visited the uk"
+    - "ati mai fost in anglia"
+    - "ati mai fost sau ati lucrat in uk"
+  patterns:
+    - '(lucrat|fost|mers).*(uk|anglia|britanie)'
+    - 'worked.*(uk|britain)'
+    - 'held.*uk\s*visa'
+    - 'visited.*uk'
+    - 'работал.*(англи|великобрит)'
+    - 'были.*(англи|великобрит)'
   profile_key: work.experience_uk_text
 
+visa_refusal:
+  keywords:
+    - "refuz viza"
+    - "visa refusal"
+    - "visa refused"
+    - "had a visa refusal"
+    - "refused a visa"
+    - "refuzat la viza"
+    - "ati avut refuz de viza"
+    - "отказ в визе"
+    - "были ли отказы в визе"
+    - "отказ в визе в uk"
+  patterns:
+    - 'refuz(at)?.*viz[aă]'
+    - 'visa\s*refus(al|ed)'
+    - 'refused.*visa'
+    - 'отказ.*виз'
+  profile_key: work.visa_refusal
+
+criminal_record:
+  keywords:
+    - cazier
+    - "cazier judiciar"
+    - "criminal record"
+    - "criminal convictions"
+    - "unspent criminal convictions"
+    - "cautions or convictions"
+    - "antecedente penale"
+    - "судимость"
+    - "наличие судимости"
+    - "привлекались к уголовной ответственности"
+    - "справка о несудимости"
+  patterns:
+    - 'cazier(\s*judiciar)?'
+    - 'criminal\s*(record|conviction|caution)'
+    - 'antecedente\s*penale'
+    - 'судимост'
+    - 'уголовн.*ответственност'
+  profile_key: work.criminal_record
+
+driving_license:
+  keywords:
+    - "permis de conducere"
+    - "driving license"
+    - "driving licence"
+    - "driver licence"
+    - "driver license"
+    - "category b driving license"
+    - "permis categoria b"
+    - "водительские права"
+    - "водительское удостоверение"
+    - "права категории б"
+    - "категория b"
+    - "категория б"
+  patterns:
+    - 'permis\s*(de\s*)?conducere'
+    - 'driving\s*licen[cs]e'
+    - 'driver\s*licen[cs]e'
+    - 'водительск.*(прав|удостоверен)'
+  profile_key: work.driving_license
+
+experience_agriculture:
+  keywords:
+    - experienta
+    - experience
+    - agricultural experience
+    - farm experience
+    - field experience
+    - harvesting experience
+    - fruit picking
+    - soft fruit harvesting
+    - vegetable harvesting
+    - picking experience
+    - crop experience
+    - packhouse experience
+    - опыт
+    - опыт работы в сельском хозяйстве
+    - опыт сбора урожая
+    - опыт на ферме
+    - полевые работы
+    - сбор ягод
+    - сбор урожая
+    - agricultura
+    - agricol
+    - ferma
+    - "experient agricola"
+    - "ai experienta"
+    - "dat cu sapa"
+    - "cules de rosii"
+    - "cules capsuni"
+    - "lucrat la ferma"
+    - "activitate lucrativa anterioara in domeniul agroalimentar"
+    - "munca fizica"
+    - "munca agricola"
+    - "sparanghel"
+    - "afine"
+    - "culturi"
+    - "la ce culturi"
+    - "evaluare abilitati"
+    - "unde ati mai lucrat"
+    - "commercial vegetable"
+    - "fruit picking experience"
+    - "практический опыт полевых работ"
+  patterns:
+    - 'experi[ei]n[tț][aă].*(agri|ferm[aă])'
+    - '(agricultural|farm|field|harvesting|picking)\s*experience'
+    - 'agri.*experi'
+    - 'dat\s*cu\s*sapa'
+    - 'cules\s*(de\s*)?(ro[sș]ii|c[aă]p[sș]uni|mere|fructe)'
+    - 'activitate.*agroalimentar'
+    - 'munca\s*(fizic[aă]|agricol[aă])'
+    - 'sparanghel|afine|culturi'
+    - 'abilit[aă][tț]i\s*practice'
+    - 'unde\s*a[tț]i\s*mai\s*lucrat'
+    - 'fruit.*picking'
+    - 'опыт.*(сельск|полевых|ферм|сбор|урожа|ягод)'
+  profile_key: work.experience_agriculture_text
+
 available_from:
-  keywords: [cand, when, когда, disponibil, available, pleca, data, "cand poti", "start date"]
-  patterns: ['c[aâ]nd\s*(po[tț]i|e[sș]ti|pleci)', 'when.*(available|start|leave)', 'когда.*(готов|можете|выезд)']
+  keywords:
+    - cand
+    - when
+    - когда
+    - disponibil
+    - available
+    - pleca
+    - "start date"
+    - "available from"
+    - "available start date"
+    - "earliest start date"
+    - "earliest date available"
+    - "when can you start"
+    - "travel immediately"
+    - "can you travel"
+    - "departure date"
+    - "cand poti"
+    - "cand puteti"
+    - "cand sunteti gata"
+    - "suiti in autocar"
+    - "disponibilitate operationala"
+    - "disponibilitate plecare"
+    - "doriti sa incepeti"
+    - "sunteti gata de plecare"
+    - "cand puteti pleca in uk"
+    - "желаемая дата выезда"
+    - "когда готовы выехать"
+    - "дата начала работы"
+    - "когда можете приступить к работе"
+    - "готовность к выезду"
+  patterns:
+    - 'c[aâ]nd\s*(po[tț]i|puteti|e[sș]ti|plec[ai]?|sunte[tț]i)'
+    - 'autocar'
+    - 'when.*(available|start|leave|travel)'
+    - 'start\s*date'
+    - 'available\s*from'
+    - 'earliest\s*date'
+    - 'departure\s*date'
+    - 'travel\s*immediately'
+    - 'gata\s*de\s*plecare'
+    - 'disponibil(itate)?'
+    - 'когда.*(готов|можете|выезд|приступить)'
+    - 'желаемая\s*дата\s*выезда'
+    - 'готовност.*выезд'
   profile_key: work.available_from
 
+duration_stay:
+  keywords:
+    - "perioada dorita"
+    - "durata sederii"
+    - "duration of stay"
+    - "how long can you stay"
+    - "intended stay duration"
+    - "length of stay"
+    - "срок пребывания"
+    - "на какой срок готовы поехать"
+    - "желаемая продолжительность работы"
+  patterns:
+    - 'durat[aă]\s*[sș]ederii'
+    - 'duration\s*of\s*stay'
+    - 'how\s*long.*stay'
+    - 'length\s*of\s*stay'
+    - 'срок\s*пребыван'
+    - 'продолжительност.*работ'
+  profile_key: work.duration_stay
+
 apply_type:
-  keywords: [singur, cuplu, alone, couple, "singur sau in cuplu", "apply alone"]
-  patterns: ['singur.*cuplu', 'alone.*couple', 'один.*пар']
+  keywords:
+    - singur
+    - cuplu
+    - alone
+    - couple
+    - solo
+    - individual
+    - "apply alone"
+    - "individual or couple"
+    - "individual (solo)"
+    - "applying as couple"
+    - "singur sau in cuplu"
+    - "de unul singur"
+    - "statutul deplasarii"
+    - "один или в паре"
+    - "едете один или вдвоем"
+    - "индивидуально или пара"
+  patterns:
+    - 'singur.*(cuplu|doi|so[tț]ia)'
+    - 'alone.*couple'
+    - 'individual.*couple'
+    - 'statutul\s*deplas[aă]rii'
+    - 'один.*(пар|вдвоем|супруг)'
+    - 'индивидуально.*пара'
   profile_key: work.apply_alone_text
 
 english_level:
-  keywords: [engleza, english, английск, nivel, level, "limba engleza", "english level"]
-  patterns: ['nivel.*englez', 'english.*level', 'уровень.*англ', 'знание.*англ']
+  keywords:
+    - engleza
+    - english
+    - английск
+    - nivel
+    - level
+    - "english level"
+    - "english speaking"
+    - "english language comprehension"
+    - "level of english"
+    - "english language ability"
+    - "limba engleza"
+    - "уровень английского"
+    - "уровень английского языка"
+    - "знание английского"
+    - "владение английским"
+  patterns:
+    - 'nivel.*englez'
+    - 'english.*(level|speaking|understanding|comprehension|ability)'
+    - 'limba\s*englez[aă]'
+    - 'уровень.*англ'
+    - 'знание.*англ'
+    - 'владени.*англ'
   profile_key: work.english_level
 
+preferred_placement:
+  keywords:
+    - "preferred placement"
+    - "placement location"
+    - "preferred placement location in uk"
+    - "preferred farm location"
+    - "farm location preference"
+    - "предпочитаемый регион"
+    - "желаемое место размещения"
+    - "предпочтения по размещению"
+  patterns:
+    - 'preferred.*(placement|location)'
+    - 'placement\s*location'
+    - 'farm\s*location'
+    - 'предпочитаем.*регион'
+  profile_key: work.preferred_location
+
+physical_condition:
+  keywords:
+    - "autoevaluare conditie fizica"
+    - "conditie fizica"
+    - "restrictii medicale"
+    - "aveti restrictii medicale"
+    - "physical stamina"
+    - "physical fitness"
+    - "fitness for outdoor work"
+    - "health restrictions"
+    - "medical restrictions"
+    - "caravan living"
+    - "caravan accommodation"
+    - "rulote"
+    - "caravane"
+    - "cazarea in rulote"
+    - "cazarea in rulote (caravane)"
+    - "физическая подготовка"
+    - "состояние здоровья"
+    - "медицинские ограничения"
+    - "проживание в караванах"
+    - "готовы жить в кемпинге"
+  patterns:
+    - 'condi[tț]ie\s*fizic[aă]'
+    - 'physical\s*(fitness|stamina|condition)'
+    - '(health|medical)\s*restrictions'
+    - 'restric[tț]ii\s*medicale'
+    - 'cazare.*(rulote|caravane)'
+    - 'caravan\s*(living|accommodation)'
+    - 'физическ.*(подготовк|форм)'
+    - 'медицинск.*ограничен'
+    - 'проживан.*караван'
+  profile_key: work.experience_agriculture_text
+
+terms_and_agreements:
+  keywords:
+    - "acceptati termenii"
+    - "termeni si conditii"
+    - "termenii si conditiile"
+    - "confirm pe propria raspundere"
+    - "confirmare finala"
+    - "datele introduse sunt reale"
+    - "confirmati ca datele"
+    - "gdpr"
+    - "terms and conditions"
+    - "accept terms"
+    - "i declare that all information is complete"
+    - "confirmation that all entered details are true"
+    - "confirmati veridicitatea"
+    - "agree to terms"
+    - "privacy policy"
+    - "data protection"
+    - "согласие на обработку персональных данных"
+    - "подтверждаю подлинность"
+    - "согласен с условиями"
+    - "принимаю правила"
+    - "подтверждаю достоверность"
+  patterns:
+    - 'accepta[tț]i.*termeni'
+    - 'termeni\s*si\s*condi[tț]ii'
+    - 'terms\s*(and|&)\s*conditions'
+    - 'privacy\s*policy'
+    - 'data\s*protection'
+    - 'confirm.*(r[aă]spundere|reale|corecte|autentic|veridicitat|information|true|accurate|date|detail|valid)'
+    - 'valid\s*passport\s*for'
+    - 'detineti\s*pasaport\s*valabil'
+    - 'gdpr'
+    - 'соглас.*(услови|обработк|данн)'
+    - 'подтвержда.*(подлинност|достоверност|правдив|судимост)'
+  profile_key: work.experience_agriculture_text
+
 about:
-  keywords: [despre, about, "о себе", detalii, details, informatii, "alte informatii", comments]
-  patterns: ['despre\s*(tine|dvs|dumneavoastra)', 'about\s*(you|yourself)', 'о\s*себе', 'detalii\s*suplimentare']
+  keywords:
+    - despre
+    - about
+    - "about you"
+    - "about yourself"
+    - "tell us about yourself"
+    - "candidate bio"
+    - "о себе"
+    - "расскажите о себе"
+    - detalii
+    - details
+    - informatii
+    - "alte informatii"
+    - comments
+    - "descrieti pe scurt"
+    - "descrieti experienta"
+    - "дополнительная информация"
+  patterns:
+    - 'despre\s*(tine|dvs|dumneavoastr[aă]|profil)'
+    - 'about\s*(you|yourself)'
+    - 'tell\s*us\s*about'
+    - 'descrie[tț]i.*(experien[tț][aă]|pe\s*scurt)'
+    - 'о\s*себе'
+    - 'расскажите\s*о\s*себе'
+    - 'дополнительн.*информац'
+    - 'detalii\s*suplimentare'
   profile_key: about.ro

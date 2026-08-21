@@ -2,36 +2,65 @@ personal:
   first_name: "JOHN"
   last_name: "DOE"
   full_name: "JOHN DOE"
+  patronymic: ""
   date_of_birth: "01/01/2000"
   date_of_birth_parts:
     day: "01"
     month: "01"
     year: "2000"
+  place_of_birth: "Chisinau"
+  place_of_birth_country: "Moldova"
   sex: "masculin"
   nationality: "moldoveneasca"
+  marital_status: "Necasatorit"
   city: "Chisinau"
   country: "Moldova"
 
 documents:
   passport_number: "P00000000"
+  passport_issue_date: "01/01/2020"
   passport_expiry: "01/01/2030"
+  passport_issuing_authority: "ASP"
+  id_card_number: "A00000000"
 
 contacts:
   phone: "+1234567890"
   whatsapp: "+1234567890"
   email: "user@example.com"
+  address_street: "Strada Principala 1"
+  address_city: "Chisinau"
+  address_region: "Chisinau"
+  address_country: "Moldova"
+  postal_code: "MD-2000"
+  address_full: "Moldova, Chisinau, Strada Principala 1"
+  emergency_contact:
+    name: "JANE DOE"
+    relationship: "Mother"
+    phone: "+1234567891"
 
 work:
   experience_agriculture: true
   experience_agriculture_text: "Da"
+  experience_crops: "Capsuni, Zmeura, Mere, Legume"
   experience_uk: false
   experience_uk_text: "Nu"
-  available_from: "April 2027"
+  previous_employer: "Agro Farm SRL"
+  driving_license: "Da, Categoria B"
+  physical_fitness: "Excelenta"
+  caravan_acceptance: "Da"
+  available_from: "Imediat"
+  duration_stay: "6 luni (Full season)"
   apply_alone: true
   apply_alone_text: "Singur"
+  preferred_location: "Oricare / Any location"
   english_level: "incepator"
+  visa_refusal: "Nu"
+  criminal_record: "Nu"
 
 about:
-  ro: "Sunt o persoana responsabila, conditie fizica buna, pregatit pentru munca in agricultura."
-  en: "Responsible person, good physical shape, ready for agricultural work."
-  ru: "Ответственный, хорошая физическая форма, готов к работе на ферме."
+  ro: "Candidat din Moldova (24 ani), conditie fizica excelenta, nefumator. Am experienta practica in agricultura (recoltare capsuni, zmeura, struguri, legume si sortare in depozit). Lucrez la un combinat agroindustrial, sunt disciplinat, rezistent la efort fizic intens si disponibil pentru tot sezonul de 6 luni."
+  short_ro: "Persoana responsabila (24 ani), conditie fizica buna, experienta in recoltare fructe si legume, disponibil pe tot sezonul de 6 luni."
+  en: "Responsible 24-year-old worker from Moldova in great physical shape with harvesting experience. Ready for intensive work for the full 6-month UK season."
+  short_en: "Responsible worker, great stamina, harvesting experience, ready for full 6-month season."
+  ru: "Ответственный кандидат из Молдовы (24 года), отличная физическая форма, опыт сбора ягод и овощей. Готов к интенсивной работе на полный 6-месячный сезон."
+  short_ru: "Кандидат (24 года), отличная форма, опыт сбора урожая, готов на полный 6-месячный сезон."

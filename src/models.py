@@ -48,40 +48,72 @@ class PersonalInfo(BaseModel):
     first_name: str = ""
     last_name: str = ""
     full_name: str = ""
+    patronymic: str = ""
     date_of_birth: str = ""
     date_of_birth_parts: Dict[str, str] = Field(default_factory=dict)
+    place_of_birth: str = ""
+    place_of_birth_country: str = ""
     sex: str = ""
     nationality: str = ""
+    marital_status: str = ""
     city: str = ""
     country: str = ""
 
 
 class DocumentsInfo(BaseModel):
     passport_number: str = ""
+    passport_issue_date: str = ""
     passport_expiry: str = ""
+    passport_issuing_authority: str = ""
+    id_card_number: str = ""
+
+
+class EmergencyContact(BaseModel):
+    name: str = ""
+    relationship: str = ""
+    phone: str = ""
 
 
 class ContactsInfo(BaseModel):
     phone: str = ""
     whatsapp: str = ""
     email: str = ""
+    address_street: str = ""
+    address_city: str = ""
+    address_region: str = ""
+    address_country: str = ""
+    postal_code: str = ""
+    address_full: str = ""
+    emergency_contact: EmergencyContact = Field(default_factory=EmergencyContact)
 
 
 class WorkInfo(BaseModel):
     experience_agriculture: bool = False
     experience_agriculture_text: str = ""
+    experience_crops: str = ""
     experience_uk: bool = False
     experience_uk_text: str = ""
+    previous_employer: str = ""
+    driving_license: str = ""
+    physical_fitness: str = ""
+    caravan_acceptance: str = "Da"
     available_from: str = ""
+    duration_stay: str = ""
     apply_alone: bool = True
     apply_alone_text: str = ""
+    preferred_location: str = ""
     english_level: str = ""
+    visa_refusal: str = "Nu"
+    criminal_record: str = "Nu"
 
 
 class AboutInfo(BaseModel):
     ro: str = ""
     en: str = ""
     ru: str = ""
+    short_ro: str = ""
+    short_en: str = ""
+    short_ru: str = ""
 
 
 class UserProfile(BaseModel):

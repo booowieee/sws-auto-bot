@@ -58,7 +58,8 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
             page_index = 1
 
             # Multi-page progression loop
-            while True:
+            max_pages = 15
+            while page_index <= max_pages:
                 logger.info(f"Processing form section #{page_index}...")
                 matches, unmatched_req = await filler.fill_current_section()
 
@@ -84,9 +85,18 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
 
                 if nav_type == "next" and nav_btn:
                     logger.info(f"Navigating to next section from section #{page_index}...")
+                    old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
                     await nav_btn.click()
                     await asyncio.sleep(1.5)
                     await page.wait_for_load_state("networkidle")
+
+                    new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
+                    if old_fields == new_fields:
+                        err_msg = f"Section #{page_index} failed to advance after clicking Next (validation error)"
+                        logger.error(err_msg)
+                        report.error_message = err_msg
+                        break
+
                     page_index += 1
                     continue
                 else:
@@ -190,13 +200,24 @@ async def run_session_check() -> int:
             return 1
 
 
+from src.batch_runner import BatchRunner
+
+
 @click.command()
 @click.option("--url", "-u", type=str, help="Target Google Form URL to fill and submit.")
+@click.option("--batch", "-b", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to text/CSV file with Google Form URLs for mass testing.")
 @click.option("--test", is_flag=True, help="Test mode: fills form, captures screenshots, but does not submit.")
 @click.option("--login", is_flag=True, help="One-time manual Google authentication in headed browser.")
 @click.option("--check-session", is_flag=True, help="Checks whether persistent Google session is active.")
 @click.option("--headed", is_flag=True, help="Run browser in visible (headed) mode for debugging.")
-def main(url: Optional[str], test: bool, login: bool, check_session: bool, headed: bool):
+def main(
+    url: Optional[str],
+    batch: Optional[Path],
+    test: bool,
+    login: bool,
+    check_session: bool,
+    headed: bool,
+):
     """SWS Auto-Fill Bot: Automated Google Forms submission tool."""
     if login:
         asyncio.run(run_login_flow())
@@ -206,11 +227,23 @@ def main(url: Optional[str], test: bool, login: bool, check_session: bool, heade
         exit_code = asyncio.run(run_session_check())
         sys.exit(exit_code)
 
+    headless_mode = False if headed else None
+
+    if batch:
+        items = BatchRunner.load_urls_from_file(batch)
+        if not items:
+            click.echo(f"Error: No valid Google Form URLs found in {batch}")
+            sys.exit(1)
+
+        runner = BatchRunner(is_test=test, headless=headless_mode)
+        summary = asyncio.run(runner.run_batch(items))
+        exit_code = 0 if summary["failed"] == 0 else 1
+        sys.exit(exit_code)
+
     if not url:
-        click.echo("Error: Please provide a Google Form URL using --url or choose --login / --check-session")
+        click.echo("Error: Please provide a Google Form URL using --url, a batch file with --batch, or choose --login / --check-session")
         sys.exit(1)
 
-    headless_mode = False if headed else None
     exit_code = asyncio.run(run_autofill(url=url, is_test=test, headless=headless_mode))
     sys.exit(exit_code)
 

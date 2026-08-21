@@ -1,5 +1,6 @@
 import asyncio
 import random
+from datetime import datetime
 from typing import List, Optional, Tuple
 from playwright.async_api import Page, Locator
 
@@ -179,10 +180,45 @@ class FormFiller:
             await dropdown.first.click()
             await asyncio.sleep(0.5)
 
-            # Look for options in popup
+            # 1. Look for options in popup
             opt_elem = self.page.locator('[role="option"]').filter(has_text=option_text)
             if await opt_elem.count() > 0:
                 await opt_elem.first.click()
+                return
+
+            # 2. Iterate all options in popup
+            options = self.page.locator('[role="option"]')
+            count = await options.count()
+            best_opt = None
+
+            target_clean = option_text.lower().strip()
+            for i in range(count):
+                opt = options.nth(i)
+                txt = (await opt.inner_text()).lower().strip()
+                if txt in ("alege", "choose", "выбрать", "--", ""):
+                    continue
+
+                if ("moldov" in target_clean or "chisinau" in target_clean) and "moldov" in txt:
+                    best_opt = opt
+                    break
+                if "roman" in target_clean and "roman" in txt:
+                    best_opt = opt
+                    break
+                if "ucrain" in target_clean and "ucrain" in txt:
+                    best_opt = opt
+                    break
+                if target_clean in txt or txt in target_clean:
+                    best_opt = opt
+                    break
+
+            if best_opt:
+                await best_opt.click()
+                return
+
+            # 3. Fallback for required dropdown: pick first non-placeholder option
+            if field.required and count > 1:
+                logger.warning(f"Selecting first valid option for required dropdown '{field.label}'")
+                await options.nth(1).click()
                 return
 
         logger.warning(f"Could not select dropdown option '{option_text}' in field '{field.label}'")
@@ -194,10 +230,27 @@ class FormFiller:
 
         date_input = container.locator('input[type="date"], input[type="text"]')
         if await date_input.count() > 0:
-            await date_input.first.click()
-            await date_input.first.fill(date_val)
+            first_input = date_input.first
+            input_type = await first_input.get_attribute("type")
+            if input_type == "date":
+                iso_val = self._convert_date_to_iso(date_val)
+                await first_input.fill(iso_val)
+            else:
+                await first_input.click()
+                await first_input.fill(date_val)
         else:
             await self._type_text(field, date_val)
+
+    @staticmethod
+    def _convert_date_to_iso(val: str) -> str:
+        val_clean = val.strip()
+        for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(val_clean, fmt)
+                return dt.strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+        return val_clean
 
     async def find_navigation_button(self) -> Tuple[Optional[Locator], str]:
         """Detects whether current page has a 'Next' or 'Submit' button."""
