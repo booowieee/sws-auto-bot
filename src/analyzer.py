@@ -48,7 +48,7 @@ class FormAnalyzer:
 
         for idx, container in enumerate(containers):
             field = await cls._parse_container(container, idx + 1)
-            if field:
+            if field and field.field_type != FieldType.UNKNOWN:
                 fields.append(field)
 
         return fields

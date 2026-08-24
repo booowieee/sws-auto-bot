@@ -36,19 +36,27 @@ emergency_name:
 emergency_relationship:
   keywords:
     - "grad de rudenie"
+    - "relatia de rudenie"
+    - "relatia cu persoana de contact"
     - "relationship to applicant"
     - "emergency relationship"
+    - "emergency relation"
     - "kin relationship"
     - "relationship to candidate"
     - "relationship with contact"
     - "степень родства"
     - "кем вам приходится"
     - "родственная связь"
+    - "кем приходится родственник"
   patterns:
+    - 'rela[tț]i.*(rudenie|persoan|contact|candidat|urgen[tț])'
     - 'grad.*rudenie'
-    - 'relationship.*(emergency|applicant|candidate|contact|kin)'
+    - 'relation(ship)?.*(emergency|applicant|candidate|contact|kin|relative)'
+    - 'emergency\s*relation(ship)?'
+    - 'kin\s*relation(ship)?'
     - 'степень\s*родств'
     - 'кем\s*(вам\s*)?приходит'
+    - 'родственн.*связ'
   profile_key: contacts.emergency_contact.relationship
 
 emergency_phone:

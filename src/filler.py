@@ -223,20 +223,30 @@ class FormFiller:
         dropdown = container.locator('[role="listbox"]')
         if await dropdown.count() > 0:
             await dropdown.first.click()
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.4)
 
-            # 1. Look for options in popup
-            opt_elem = self.page.locator('[role="option"]').filter(has_text=option_text)
-            if await opt_elem.count() > 0:
-                await opt_elem.first.click()
-                return
-
-            # 2. Iterate all options in popup
-            options = self.page.locator('[role="option"]')
+            # Look for options in popup
+            options = self.page.locator('[role="option"]:visible')
             count = await options.count()
-            best_opt = None
+            if count == 0:
+                options = self.page.locator('[role="option"]')
+                count = await options.count()
 
             target_clean = option_text.lower().strip()
+
+            # 1. Exact match pass (highest precision for short strings like "L", "S", "M", "43")
+            for i in range(count):
+                opt = options.nth(i)
+                txt = (await opt.inner_text()).lower().strip()
+                if txt == target_clean:
+                    try:
+                        await opt.click(timeout=3000)
+                        return
+                    except Exception:
+                        pass
+
+            # 2. Heuristic substring / keyword pass
+            best_opt = None
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
@@ -257,14 +267,20 @@ class FormFiller:
                     break
 
             if best_opt:
-                await best_opt.click()
-                return
+                try:
+                    await best_opt.click(timeout=3000)
+                    return
+                except Exception:
+                    pass
 
             # 3. Fallback for required dropdown: pick first non-placeholder option
             if field.required and count > 1:
                 logger.warning(f"Selecting first valid option for required dropdown '{field.label}'")
-                await options.nth(1).click()
-                return
+                try:
+                    await options.nth(1).click(timeout=3000)
+                    return
+                except Exception:
+                    pass
 
         logger.warning(f"Could not select dropdown option '{option_text}' in field '{field.label}'")
 
