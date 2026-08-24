@@ -19,12 +19,12 @@ from src.reporter import ExecutionReporter
 
 
 class BatchRunner:
-    """Orchestrates mass-testing across multiple Google Forms and generates QA benchmark reports."""
+    """Runs tests across multiple Google Forms and generates QA benchmark reports."""
 
-    def __init__(self, is_test: bool = True, headless: Optional[bool] = None, delay_between_forms: float = 1.5):
+    def __init__(self, is_test: bool = True, headless: Optional[bool] = None, delay_between_forms: Optional[float] = None):
         self.is_test = is_test
         self.headless = Config.HEADLESS if headless is None else headless
-        self.delay_between_forms = delay_between_forms
+        self.delay_between_forms = delay_between_forms if delay_between_forms is not None else Config.DELAY_BETWEEN_FORMS
 
     @staticmethod
     def load_urls_from_file(file_path: Path) -> List[Tuple[str, str]]:
@@ -110,7 +110,7 @@ class BatchRunner:
                 filler = FormFiller(page, matcher)
                 all_filled_records = []
                 page_index = 1
-                max_pages = 15
+                max_pages = Config.MAX_PAGES
 
                 while page_index <= max_pages:
                     matches, unmatched_req = await filler.fill_current_section()
@@ -214,7 +214,7 @@ class BatchRunner:
         total_fields_found = 0
 
         print("\n" + "=" * 80)
-        print(f" SWS AUTO-BOT QA BENCHMARK — TESTING {total_forms} FORMS")
+        print(f" SWS AUTO-BOT QA BENCHMARK -- TESTING {total_forms} FORMS")
         print("=" * 80 + "\n")
 
         for idx, (title, url) in enumerate(items, 1):
@@ -287,7 +287,7 @@ class BatchRunner:
 
         # Save Markdown Report
         md_lines = [
-            f"# SWS Auto-Bot — QA Benchmark Report",
+            f"# SWS Auto-Bot -- QA Benchmark Report",
             f"",
             f"- **Date / Time:** {summary['timestamp']}",
             f"- **Total Forms Tested:** {summary['total_tested']}",

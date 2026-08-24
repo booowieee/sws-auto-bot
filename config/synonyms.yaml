@@ -1,6 +1,6 @@
 # ==============================================================================
-# SWS AUTO-BOT SYNONYMS & FIELD RECOGNITION DICTIONARY
-# 100% Equal Parity for Romanian, English, and Russian Recruitment Forms
+# SWS AUTO-BOT -- FIELD RECOGNITION DICTIONARY
+# Supports Romanian, English, and Russian form labels
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -1008,7 +1008,7 @@ physical_condition:
     - 'физическ.*(подготовк|форм)'
     - 'медицинск.*ограничен'
     - 'проживан.*караван'
-  profile_key: work.experience_agriculture_text
+  profile_key: work.physical_fitness
 
 terms_and_agreements:
   keywords:
@@ -1045,7 +1045,7 @@ terms_and_agreements:
     - 'gdpr'
     - 'соглас.*(услови|обработк|данн)'
     - 'подтвержда.*(подлинност|достоверност|правдив|судимост)'
-  profile_key: work.experience_agriculture_text
+  profile_key: work.caravan_acceptance
 
 about:
   keywords:

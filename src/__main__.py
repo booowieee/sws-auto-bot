@@ -58,7 +58,7 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
             page_index = 1
 
             # Multi-page progression loop
-            max_pages = 15
+            max_pages = Config.MAX_PAGES
             while page_index <= max_pages:
                 logger.info(f"Processing form section #{page_index}...")
                 matches, unmatched_req = await filler.fill_current_section()
@@ -180,7 +180,7 @@ async def run_login_flow() -> None:
             while not page.is_closed():
                 await asyncio.sleep(1)
         except Exception:
-            pass
+            logger.debug("Browser window closed during login flow.")
 
     logger.info("Google authentication session saved to persistent profile.")
 

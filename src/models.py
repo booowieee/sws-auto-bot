@@ -96,15 +96,15 @@ class WorkInfo(BaseModel):
     previous_employer: str = ""
     driving_license: str = ""
     physical_fitness: str = ""
-    caravan_acceptance: str = "Da"
+    caravan_acceptance: str = ""
     available_from: str = ""
     duration_stay: str = ""
     apply_alone: bool = True
     apply_alone_text: str = ""
     preferred_location: str = ""
     english_level: str = ""
-    visa_refusal: str = "Nu"
-    criminal_record: str = "Nu"
+    visa_refusal: str = ""
+    criminal_record: str = ""
 
 
 class AboutInfo(BaseModel):

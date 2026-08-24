@@ -37,9 +37,19 @@ class Config:
     ACTION_TIMEOUT_MS: int = int(os.getenv("ACTION_TIMEOUT_MS", "10000"))
     NAVIGATION_TIMEOUT_MS: int = int(os.getenv("NAVIGATION_TIMEOUT_MS", "30000"))
     FUZZY_THRESHOLD: float = float(os.getenv("FUZZY_THRESHOLD", "75.0"))
+    MAX_PAGES: int = int(os.getenv("MAX_PAGES", "15"))
+    DELAY_BETWEEN_FORMS: float = float(os.getenv("DELAY_BETWEEN_FORMS", "1.5"))
 
     VIEWPORT_WIDTH: int = 1920
     VIEWPORT_HEIGHT: int = 1080
+
+    TIMEZONE: str = os.getenv("TIMEZONE", "Europe/Bucharest")
+    USER_AGENT: str = os.getenv(
+        "USER_AGENT",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/131.0.0.0 Safari/537.36",
+    )
 
 
 def ensure_directories() -> None:
@@ -63,6 +73,9 @@ def load_profile(path: Optional[Path] = None) -> UserProfile:
 
     with open(target_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected a YAML mapping in {target_path}, got {type(data).__name__}")
 
     try:
         return UserProfile(**data)

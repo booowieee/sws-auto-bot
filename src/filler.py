@@ -53,7 +53,7 @@ VALIDATION_ERROR_TEXTS = [
 
 
 class FormFiller:
-    """Interacts with Google Forms elements with human-like timing and handles submission flow."""
+    """Fills Google Forms fields and handles page navigation and submission."""
 
     def __init__(self, page: Page, matcher: FieldMatcher):
         self.page = page

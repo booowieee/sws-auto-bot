@@ -7,11 +7,16 @@ ENV PYTHONUNBUFFERED=1 \
     HEADLESS=true \
     CHROME_PERSISTENT_PROFILE_DIR=/app/data/chrome_profile
 
+RUN mkdir -p /app/data/chrome_profile /app/logs /app/screenshots
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+RUN useradd -m -s /bin/bash botuser \
+    && chown -R botuser:botuser /app
 
-RUN mkdir -p /app/data/chrome_profile /app/logs /app/screenshots
+COPY --chown=botuser:botuser . .
+
+USER botuser
 
 ENTRYPOINT ["python", "-m", "src.__main__"]

@@ -8,11 +8,6 @@ from playwright.async_api import BrowserContext, Page, Playwright, async_playwri
 from src.config import Config, ensure_directories
 from src.logger import logger
 
-DEFAULT_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/131.0.0.0 Safari/537.36"
-)
 
 CHROMIUM_ARGS = [
     "--no-sandbox",
@@ -64,10 +59,10 @@ class BrowserManager:
             user_data_dir=str(self.user_data_dir),
             headless=self.headless,
             args=CHROMIUM_ARGS,
-            user_agent=DEFAULT_USER_AGENT,
+            user_agent=Config.USER_AGENT,
             viewport={"width": Config.VIEWPORT_WIDTH, "height": Config.VIEWPORT_HEIGHT},
             locale="en-US",
-            timezone_id="Europe/Bucharest",
+            timezone_id=Config.TIMEZONE,
             permissions=["geolocation"],
             ignore_https_errors=True,
         )
@@ -132,6 +127,6 @@ class BrowserManager:
 
             logger.info("Google Account is actively authenticated.")
             return True
-        except Exception as e:
-            logger.error(f"Error checking Google session: {e}")
+        except Exception:
+            logger.exception("Failed to check Google session status")
             return False

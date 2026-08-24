@@ -19,7 +19,7 @@ def test_match_full_name_compound(matcher):
         required=True,
     )
     match = matcher.match_field(field)
-    assert match.method in (MatchMethod.REGEX_PATTERN, MatchMethod.EXACT_KEYWORD, MatchMethod.FUZZY)
+    assert match.method == MatchMethod.REGEX_PATTERN
     assert match.matched_key == "full_name"
     assert match.resolved_value == matcher.profile.personal.full_name
 
