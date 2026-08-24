@@ -257,9 +257,7 @@ class FormFiller:
                 options = self.page.locator('[role="option"]')
                 count = await options.count()
 
-            target_clean = option_text.lower().strip()
-
-            # 1. Exact match pass (highest precision for short strings like "L", "S", "M", "43")
+            # 1. Exact match pass (highest precision)
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
@@ -270,14 +268,15 @@ class FormFiller:
                     except Exception:
                         pass
 
-            # 2. Heuristic substring / keyword pass
+            # 2. Semantic and keyword pass
             best_opt = None
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
-                if txt in ("alege", "choose", "выбрать", "--", ""):
+                if txt in ("alege", "choose", "выбрать", "--", "", "select"):
                     continue
 
+                # Nationality matches
                 if ("moldov" in target_clean or "chisinau" in target_clean) and "moldov" in txt:
                     best_opt = opt
                     break
@@ -287,7 +286,29 @@ class FormFiller:
                 if "ucrain" in target_clean and "ucrain" in txt:
                     best_opt = opt
                     break
-                if target_clean in txt or txt in target_clean:
+
+                # Size matches (L, XL, XXL, M, S, 42, 43, 44)
+                if len(target_clean) <= 4:
+                    if txt.startswith(f"{target_clean} ") or txt.startswith(f"{target_clean}-") or f"({target_clean})" in txt or f" {target_clean} " in f" {txt} ":
+                        best_opt = opt
+                        break
+
+                # English level matches
+                if any(w in target_clean for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar")):
+                    if any(w in txt for w in ("incepator", "începător", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов")):
+                        best_opt = opt
+                        break
+                elif any(w in target_clean for w in ("mediu", "intermediate", "b1", "b2", "conversational")):
+                    if any(w in txt for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн")):
+                        best_opt = opt
+                        break
+                elif any(w in target_clean for w in ("avansat", "advanced", "c1", "c2", "fluent")):
+                    if any(w in txt for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
+                        best_opt = opt
+                        break
+
+                # General substring match (longer strings only)
+                if len(target_clean) > 3 and (target_clean in txt or txt in target_clean):
                     best_opt = opt
                     break
 
