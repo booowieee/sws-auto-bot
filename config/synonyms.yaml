@@ -160,7 +160,7 @@ id_card:
     - "булетин"
     - "серия и номер булетина"
   patterns:
-    - 'buletin(\s*de\s*identitate)?'
+    - '^(?!.*adres).*(seri[ae]|num[aă]r|copie)?\s*buletin(ului)?(\s*de\s*identitate)?'
     - 'carte\s*de\s*identitate'
     - 'national\s*id'
     - 'id\s*card'
@@ -364,11 +364,10 @@ first_name:
     - "имя"
     - "prenume (first name)"
   patterns:
-    - '^prenume'
-    - '^first\s*name'
-    - '^given\s*name'
-    - '^forename'
+    - 'prenum[e]?'
+    - '(first|given|fore)\s*names?'
     - '^имя$'
+    - 'ваше\s*имя'
   profile_key: personal.first_name
 
 last_name:
@@ -382,11 +381,10 @@ last_name:
     - "ваша фамилия"
     - "nume de familie (surname)"
   patterns:
-    - '^nume$'
     - 'nume\s*de\s*familie'
-    - '^(last|family)\s*name'
-    - '^surname'
-    - '^фамили'
+    - '(last|family)\s*names?'
+    - '\bsurname\b'
+    - 'фамили'
   profile_key: personal.last_name
 
 full_name:
@@ -420,13 +418,13 @@ full_name:
     - "nume prenume"
   patterns:
     - 'nume\s*(si|și)?\s*prenum[e]?'
-    - '(first|last|full)(\s+legal)?\s+name'
-    - 'full\s*name'
+    - 'full(\s+legal)?\s+name'
+    - 'candidate\s*full\s*legal\s*name'
+    - 'applicant\s*full\s*legal\s*name'
     - 'numele\s*complet'
     - 'cum\s*v[aă]\s*(strig[aă]|numi[tț]i)'
     - 'cine\s*sunte[tț]i'
     - 'identitatea\s*titularului'
-    - 'applicant\s*full\s*legal\s*name'
     - 'candidate\s*full\s*name'
     - 'фамилия.*имя'
     - 'фио'
@@ -451,14 +449,15 @@ sex:
     - "your gender"
     - "select gender"
   patterns:
-    - '^sex'
-    - 'sexul'
-    - '^gen'
-    - 'genul'
-    - 'b[aă]rbat\s*sau\s*femeie'
-    - '^пол$'
+    - 'sex(ul)?'
+    - 'gen(ul)?'
+    - 'b[aă]rbat\s*(sau\s*)?femeie'
+    - 'biological\s*(sex|gender|male|female)'
+    - 'male\s*(or\s*)?female'
+    - '\b(gender|sex)\b'
+    - '\bпол\b'
+    - 'мужчин.*женщин'
     - 'ваш\s*пол'
-    - '^gender'
   profile_key: personal.sex
 
 marital_status:
@@ -588,15 +587,15 @@ country:
     - country
     - country of residence
     - permanent residence country
+    - strana
     - страна
     - страна проживания
     - "tara de resedinta"
     - "tara de domiciliu"
   patterns:
-    - '[tț]ar[aă]'
-    - '\bcountry\b'
-    - 'country\s*of\s*residence'
-    - 'стран'
+    - '\b[tț]ar[aă]\b(\s*(de\s*)?(re[sș]edin[tț][aă]|domiciliu|origine|na[sș]tere))?'
+    - '\bcountry\b(\s*of\s*(residence|origin|birth))?'
+    - '\bстран[аыеу]\b'
   profile_key: personal.country
 
 address_full:
@@ -618,7 +617,7 @@ address_full:
     - "фактический адрес проживания"
     - "домашний адрес"
   patterns:
-    - 'adres[aă]\s*(de\s*)?(domiciliu|complet[aă]|exact[aă]|re[sș]edin[tț][aă])'
+    - 'adres[aă]\s*(de\s*)?(domiciliu|complet[aă]|exact[aă]|re[sș]edin[tț][aă]|din\s*buletin|din\s*pa[sș]aport)'
     - 'full\s*address'
     - 'home\s*address'
     - 'residential\s*address'
@@ -656,8 +655,9 @@ email:
     - "email de contact"
     - "reintroduceti adresa de email"
   patterns:
-    - 'e-?ma[i|l]'
-    - 'adres[aă]?\s*(de\s*)?e-?ma[i|l]'
+    - '\be-?mails?\b'
+    - '\be-?mals?\b'
+    - 'adres[aă]?\s*(de\s*)?e-?mails?'
     - 'po[sș]t[aă]\s*electronic[aă]'
     - 'c[aă]su[tț]a\s*po[sș]tal[aă]'
     - 'электронн.*почт'
@@ -880,13 +880,13 @@ experience_agriculture:
     - '(agricultural|farm|field|harvesting|picking)\s*experience'
     - 'agri.*experi'
     - 'dat\s*cu\s*sapa'
-    - 'cules\s*(de\s*)?(ro[sș]ii|c[aă]p[sș]uni|mere|fructe)'
-    - 'activitate.*agroalimentar'
-    - 'munca\s*(fizic[aă]|agricol[aă])'
+    - 'cules\s*(de\s*)?(ro[sș]ii|c[aă]p[sș]uni|mere|fructe|zmeur)'
+    - 'activitate.*(agroalimentar|agricol[aă])'
     - 'sparanghel|afine|culturi'
-    - 'abilit[aă][tț]i\s*practice'
+    - 'abilit[aă][tț]i\s*practice\s*agricole'
     - 'unde\s*a[tț]i\s*mai\s*lucrat'
     - 'fruit.*picking'
+    - 'commercial\s*(crop|agriculture|fruit|vegetable)'
     - 'опыт.*(сельск|полевых|ферм|сбор|урожа|ягод)'
   profile_key: work.experience_agriculture_text
 
@@ -1038,28 +1038,39 @@ physical_condition:
     - "fitness for outdoor work"
     - "health restrictions"
     - "medical restrictions"
-    - "caravan living"
-    - "caravan accommodation"
-    - "rulote"
-    - "caravane"
-    - "cazarea in rulote"
-    - "cazarea in rulote (caravane)"
     - "физическая подготовка"
     - "состояние здоровья"
     - "медицинские ограничения"
-    - "проживание в караванах"
-    - "готовы жить в кемпинге"
   patterns:
     - 'condi[tț]ie\s*fizic[aă]'
     - 'physical\s*(fitness|stamina|condition)'
     - '(health|medical)\s*restrictions'
     - 'restric[tț]ii\s*medicale'
-    - 'cazare.*(rulote|caravane)'
-    - 'caravan\s*(living|accommodation)'
     - 'физическ.*(подготовк|форм)'
     - 'медицинск.*ограничен'
-    - 'проживан.*караван'
   profile_key: work.physical_fitness
+
+caravan_acceptance:
+  keywords:
+    - "cazarea in rulote"
+    - "cazarea in rulote (caravane)"
+    - "rulote"
+    - "caravane"
+    - "caravan living"
+    - "caravan accommodation"
+    - "farm caravan accommodation"
+    - "acceptati cazarea in rulote"
+    - "cazare rulota"
+    - "проживание в караванах"
+    - "проживание в кемпинге"
+    - "готовы жить в кемпинге"
+  patterns:
+    - 'cazare.*(rulot|caravan)'
+    - 'caravan\s*(living|accommodation)'
+    - 'accepta[tț]i.*cazare'
+    - 'on-site.*caravan'
+    - 'проживан.*(караван|кемпинг|вагончик)'
+  profile_key: work.caravan_acceptance
 
 terms_and_agreements:
   keywords:

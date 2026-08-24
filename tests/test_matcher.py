@@ -202,6 +202,13 @@ def test_match_extended_fields(matcher):
         ("I confirm I have not paid any work-finding fees to third parties (GLAA Anti-Slavery Declaration)", "no_recruitment_fees", matcher.profile.work.caravan_acceptance),
         ("Cetățenia deținută", "nationality", matcher.profile.personal.nationality),
         ("Relația de rudenie cu persoana de contact (Emergency Relation)", "emergency_relationship", matcher.profile.contacts.emergency_contact.relationship),
+        ("Are you biological MALE or FEMALE?", "sex", matcher.profile.personal.sex),
+        ("Ați avut vreodată refuz de viză pentru Marea Britanie sau altă țară?", "visa_refusal", matcher.profile.work.visa_refusal),
+        ("Suferiți de afecțiuni medicale sau boli cronice care vă împiedică munca fizică?", "medical_conditions", matcher.profile.health.medical_conditions),
+        ("Sunteți de acord cu cazarea oferită la fermă în rulote tip caravană?", "caravan_acceptance", matcher.profile.work.caravan_acceptance),
+        ("Adresa completă de domiciliu din buletin / pașaport", "address_full", matcher.profile.contacts.address_full),
+        ("1.1 SURNAME / LAST NAME ONLY (Family name)", "last_name", matcher.profile.personal.last_name),
+        ("1.2 GIVEN / FIRST NAMES ONLY (Do not include surname)", "first_name", matcher.profile.personal.first_name),
     ]
     for label, expected_key, expected_val in cases:
         field = FormField(index=1, label=label, field_type=FieldType.TEXT, required=True)

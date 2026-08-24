@@ -51,7 +51,16 @@ class FieldMatcher:
     """Matches Google Form fields against user profile data."""
 
     # Synonym keys that get priority routing before the general matching loop
-    PRIORITY_KEYS = ("emergency_relationship", "emergency_phone", "emergency_name")
+    PRIORITY_KEYS = (
+        "emergency_relationship",
+        "emergency_phone",
+        "emergency_name",
+        "visa_refusal",
+        "no_recruitment_fees",
+        "caravan_acceptance",
+        "medical_conditions",
+        "address_full",
+    )
 
     def __init__(self, profile: UserProfile, synonyms: Dict[str, SynonymEntry]):
         self.profile = profile
@@ -72,9 +81,10 @@ class FieldMatcher:
 
     def match_field(self, field: FormField) -> FieldMatch:
         """Matches a form field label to a profile attribute."""
-        # Normalize: strip HTML tags, brackets, underscores, collapse whitespace
+        # Normalize: strip HTML tags, brackets, negative parentheticals, collapse whitespace
         clean_text = re.sub(r"<[^>]+>", " ", field.label.lower())
         clean_text = re.sub(r"\[[^\]]+\]", " ", clean_text)
+        clean_text = re.sub(r"\((do\s*not|nu\s*include[tț]i|не\s*указывайте|без)[^\)]*\)", " ", clean_text)
         clean_text = re.sub(r"[_\-:\*]+", " ", clean_text)
         label_clean = re.sub(r"\s+", " ", clean_text).strip()
 
