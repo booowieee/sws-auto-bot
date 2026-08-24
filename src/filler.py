@@ -149,17 +149,28 @@ class FormFiller:
             logger.error(f"Error filling field '{field.label}': {e}")
             raise
 
-    def _get_container(self, field: FormField) -> Locator:
+    async def _get_container(self, field: FormField) -> Locator:
         """Finds the question container by label text with fallback to index."""
         if field.label:
-            clean_l = field.label.split("\n")[0].strip()
-            clean_l = re.sub(r"[\[\]\(\)\*]+", " ", clean_l).strip()
-            if clean_l:
-                by_text = self.page.locator('[role="listitem"]').filter(has_text=clean_l)
+            # 1. Try finding container containing the exact label text
+            by_text = self.page.locator('[role="listitem"]').filter(has_text=field.label)
+            if await by_text.count() > 0:
                 return by_text.first
 
+            # 2. Try with main part before parenthesis or newline
+            clean_l = field.label.split("(")[0].split("\n")[0].strip()
+            if clean_l and len(clean_l) >= 3:
+                by_prefix = self.page.locator('[role="listitem"]').filter(has_text=clean_l)
+                if await by_prefix.count() > 0:
+                    return by_prefix.first
+
+        # 3. Fallback to question index
         containers = self.page.locator('[role="listitem"]')
-        return containers.nth(field.index - 1) if field.index > 0 else self.page.locator('[role="listitem"]').first
+        count = await containers.count()
+        if 0 < field.index <= count:
+            return containers.nth(field.index - 1)
+
+        return containers.first if count > 0 else self.page.locator('[role="listitem"]')
 
     async def _type_text(self, field: FormField, text: str) -> None:
         locator = None
@@ -167,26 +178,29 @@ class FormFiller:
             locator = self.page.locator(f'input[name="{field.entry_id}"], textarea[name="{field.entry_id}"]')
 
         if not locator or await locator.count() == 0:
-            container = self._get_container(field)
+            container = await self._get_container(field)
             if await container.count() > 0:
                 locator = container.locator('input[type="text"], input:not([type]), textarea')
 
         if not locator or await locator.count() == 0:
-            locator = self.page.get_by_label(field.label, exact=False)
+            locator = self.page.locator('input[type="text"], input:not([type]), textarea')
 
-        try:
-            await locator.first.click(force=True, timeout=2000)
-        except Exception:
-            await locator.first.focus()
+        if await locator.count() > 0:
+            try:
+                await locator.first.click(force=True, timeout=2000)
+            except Exception:
+                await locator.first.focus()
 
-        await locator.first.fill("")  # Clear existing content
+            await locator.first.fill("")  # Clear existing content
 
-        # Human-like typing with random jitter
-        for char in text:
-            await locator.first.press_sequentially(char, delay=random.uniform(15, 55))
+            # Human-like typing with random jitter
+            for char in text:
+                await locator.first.press_sequentially(char, delay=random.uniform(15, 55))
+        else:
+            logger.warning(f"Could not locate text input for '{field.label}'")
 
     async def _select_radio(self, field: FormField, option_text: str) -> None:
-        container = self._get_container(field)
+        container = await self._get_container(field)
 
         # Try finding radio by exact option label
         radio = container.locator(f'[role="radio"][data-value="{option_text}"], [role="radio"][aria-label="{option_text}"]')
@@ -209,7 +223,7 @@ class FormFiller:
         logger.warning(f"Could not locate radio option '{option_text}' in field '{field.label}'")
 
     async def _select_checkbox(self, field: FormField, option_text: str) -> None:
-        container = self._get_container(field)
+        container = await self._get_container(field)
 
         cb = container.locator(f'[role="checkbox"][data-value="{option_text}"], [role="checkbox"][aria-label="{option_text}"]')
         if await cb.count() > 0:
@@ -229,7 +243,7 @@ class FormFiller:
         logger.warning(f"Could not locate checkbox option '{option_text}' in field '{field.label}'")
 
     async def _select_dropdown(self, field: FormField, option_text: str) -> None:
-        container = self._get_container(field)
+        container = await self._get_container(field)
 
         dropdown = container.locator('[role="listbox"]')
         if await dropdown.count() > 0:
@@ -296,21 +310,24 @@ class FormFiller:
         logger.warning(f"Could not select dropdown option '{option_text}' in field '{field.label}'")
 
     async def _fill_date(self, field: FormField, date_val: str) -> None:
-        container = self._get_container(field)
+        container = await self._get_container(field)
 
-        date_input = container.locator('input[type="date"], input[type="text"]')
+        date_input = container.locator('input[type="date"], input[type="text"], input:not([type])')
         if await date_input.count() > 0:
             first_input = date_input.first
             input_type = await first_input.get_attribute("type")
             if input_type == "date":
                 iso_val = self._convert_date_to_iso(date_val)
-                await first_input.fill(iso_val)
-            else:
                 try:
-                    await first_input.click(force=True, timeout=2000)
+                    await first_input.fill(iso_val)
+                    return
                 except Exception:
-                    await first_input.focus()
-                await first_input.fill(date_val)
+                    pass
+            try:
+                await first_input.click(force=True, timeout=2000)
+            except Exception:
+                await first_input.focus()
+            await first_input.fill(date_val)
         else:
             await self._type_text(field, date_val)
 
