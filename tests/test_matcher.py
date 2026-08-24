@@ -198,6 +198,10 @@ def test_match_extended_fields(matcher):
         ("Aeroportul preferat de plecare", "preferred_airport", matcher.profile.logistics.preferred_airport),
         ("Preferred airport of departure", "preferred_airport", matcher.profile.logistics.preferred_airport),
         ("Предпочитаемый аэропорт вылета", "preferred_airport", matcher.profile.logistics.preferred_airport),
+        ("[DOB-VERIFY] Exact date you were born (Calendar selection)", "date_of_birth", matcher.profile.personal.date_of_birth),
+        ("I confirm I have not paid any work-finding fees to third parties (GLAA Anti-Slavery Declaration)", "no_recruitment_fees", matcher.profile.work.caravan_acceptance),
+        ("Cetățenia deținută", "nationality", matcher.profile.personal.nationality),
+        ("Relația de rudenie cu persoana de contact (Emergency Relation)", "emergency_relationship", matcher.profile.contacts.emergency_contact.relationship),
     ]
     for label, expected_key, expected_val in cases:
         field = FormField(index=1, label=label, field_type=FieldType.TEXT, required=True)

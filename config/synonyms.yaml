@@ -297,6 +297,10 @@ date_of_birth:
     - 'date\s*of\s*birth'
     - 'birth\s*date'
     - '\bdob\b'
+    - 'date.*(you\s*were\s*)?born'
+    - 'when\s*were\s*you\s*born'
+    - 'you\s*were\s*born'
+    - 'exact\s*date.*born'
     - 'c[aâ]nd\s*v-a[tț]i\s*n[aă]scut'
     - 'c[aâ][tț]i\s*ani\s*ave[tț]i'
     - 'ziua\s*de\s*na[sș]tere'
@@ -480,6 +484,9 @@ marital_status:
 nationality:
   keywords:
     - cetatenie
+    - cetatenia
+    - "cetatenia detinuta"
+    - "cetatenia actuala"
     - nationality
     - citizenship
     - country of citizenship
@@ -488,7 +495,7 @@ nationality:
     - "tara de origine"
     - "ваше гражданство"
   patterns:
-    - 'cet[aă][tț]enie'
+    - 'cet[aă][tț]en(ie|ia)?'
     - 'nationality'
     - 'citizenship'
     - 'гражданств'
@@ -1857,6 +1864,11 @@ no_recruitment_fees:
     - "no recruitment fees"
     - "no illegal fees"
     - "did you pay any fees"
+    - "work-finding fees"
+    - "work finding fees"
+    - "anti-slavery declaration"
+    - "glaa declaration"
+    - "glaa anti-slavery"
     - "не платили за трудоустройство"
     - "не оплачивали сборы"
     - "незаконные платежи"
@@ -1864,7 +1876,11 @@ no_recruitment_fees:
     - 'nu\s*a[tț]i\s*pl[aă]tit.*tax'
     - 'taxe\s*(ilegale|de\s*recrutare)'
     - 'comisioane\s*de\s*angajare'
-    - '(no|any)\s*(illegal\s*)?(recruitment|agency)\s*fee'
+    - '(no|any)\s*(illegal\s*)?(recruitment|agency|work-finding|placement)\s*fee'
+    - 'work-finding\s*fee'
+    - 'not\s*paid.*fee'
+    - 'anti-slavery'
+    - 'glaa\s*(anti-slavery|declaration)?'
     - 'did\s*you\s*pay.*fee'
     - 'не\s*платили.*(трудоустройств|сбор)'
     - 'незаконн.*платеж'
