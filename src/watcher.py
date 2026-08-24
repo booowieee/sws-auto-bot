@@ -49,7 +49,6 @@ class FormWatcher:
         self.is_test = is_test
         self.headless = headless
         self._stop_event = asyncio.Event()
-        self._setup_signal_handlers()
 
     def _setup_signal_handlers(self):
         """Register OS signal handlers for graceful shutdown."""
@@ -68,6 +67,7 @@ class FormWatcher:
 
     async def watch(self) -> int:
         """Main watch loop. Polls the form, triggers autofill when open. Returns exit code."""
+        self._setup_signal_handlers()
         start = time.time()
         check_count = 0
 
@@ -156,15 +156,10 @@ class FormWatcher:
 
                     # Open: active form elements found
                     has_inputs = any(ind in html_lower for ind in OPEN_INDICATORS)
-                    has_viewform = "viewform" in final_url
-
                     if has_inputs:
                         return True
 
-                    if has_viewform:
-                        return True
-
-                    logger.debug("Form status undetermined, treating as closed")
+                    logger.debug("Form status undetermined or closed (no active input indicators found)")
                     return False
 
         except aiohttp.ClientError as e:

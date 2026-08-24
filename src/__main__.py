@@ -105,8 +105,8 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
             report.total_fields = len(all_filled_records)
             report.filled_fields = all_filled_records
 
-            # If stopped due to unmatched required fields, bail out before submit
-            if report.unmatched_required_fields:
+            # If stopped due to errors or unmatched required fields, bail out before submit
+            if report.unmatched_required_fields or report.error_message:
                 report.status = FormStatus.FAILED
                 report.duration_sec = time.time() - start_time
                 reporter.save_json_log(report)

@@ -60,9 +60,15 @@ class ExecutionReporter:
             self._cleanup_local_screenshots()
             return
 
-        status_emoji = "SUCCESS" if report.status == FormStatus.SUCCESS else "FAILED"
+        status_text = {
+            FormStatus.SUCCESS: "SUCCESS",
+            FormStatus.DRY_RUN: "DRY-RUN (TEST OK)",
+            FormStatus.CLOSED: "CLOSED",
+            FormStatus.FAILED: "FAILED",
+        }.get(report.status, report.status.value.upper())
+
         caption = (
-            f"<b>[SWS Auto-Bot] Отчет выполнения: {status_emoji}</b>\n\n"
+            f"<b>[SWS Auto-Bot] Отчет выполнения: {status_text}</b>\n\n"
             f"<b>URL:</b> <code>{report.url}</code>\n"
             f"<b>Статус:</b> {report.status.value}\n"
             f"<b>Время выполнения:</b> {report.duration_sec:.1f} сек.\n"

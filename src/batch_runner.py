@@ -60,7 +60,7 @@ class BatchRunner:
 
         for line in lines:
             line_str = line.strip()
-            if not line_str:
+            if not line_str or line_str.startswith("#"):
                 continue
 
             # Check if line contains a URL
@@ -80,29 +80,32 @@ class BatchRunner:
 
     async def run_single_form(
         self,
-        url: str,
+        index: int,
         title: str,
+        url: str,
         matcher: FieldMatcher,
         browser_mgr: BrowserManager,
     ) -> ExecutionReport:
-        """Executes automated filling for a single form."""
         start_time = time.time()
-        report = ExecutionReport(
-            url=url,
-            timestamp=datetime.now(UTC).isoformat(),
-            status=FormStatus.FAILED,
-        )
+        logger.info(f"[{index:02d}] Testing: {title} ({url})")
 
         async with browser_mgr as (context, page):
             reporter = ExecutionReporter(page)
+            report = ExecutionReport(
+                url=url,
+                timestamp=datetime.now(UTC).isoformat(),
+                status=FormStatus.FAILED,
+            )
+
             try:
                 await page.goto(url, wait_until="networkidle")
                 await reporter.capture_milestone("01_loaded")
 
-                is_closed, close_reason = await FormAnalyzer.is_form_closed(page)
+                is_closed, reason = await FormAnalyzer.is_form_closed(page)
                 if is_closed:
+                    logger.warning(f"Form is closed: {reason}")
                     report.status = FormStatus.CLOSED
-                    report.error_message = close_reason
+                    report.error_message = f"Form is closed: {reason}"
                     report.duration_sec = time.time() - start_time
                     reporter.save_json_log(report)
                     return report
@@ -114,6 +117,7 @@ class BatchRunner:
 
                 while page_index <= max_pages:
                     matches, unmatched_req = await filler.fill_current_section()
+
                     for m in matches:
                         all_filled_records.append({
                             "label": m.field.label,
@@ -121,15 +125,16 @@ class BatchRunner:
                             "matched_key": m.matched_key,
                             "value": str(m.resolved_value or m.selected_option or ""),
                             "method": m.method.value,
-                            "required": m.field.required,
                         })
 
                     if unmatched_req:
                         unmatched_labels = [f.label for f in unmatched_req]
-                        err_msg = f"{len(unmatched_req)} required field(s) unmatched: {unmatched_labels}"
+                        err_msg = f"Cannot proceed: {len(unmatched_req)} required field(s) unmatched: {unmatched_labels}"
+                        logger.error(err_msg)
                         report.unmatched_required_fields = unmatched_labels
                         report.error_message = err_msg
-                        await reporter.capture_milestone(f"section_{page_index}_unmatched")
+                        report.status = FormStatus.FAILED
+                        await reporter.capture_milestone(f"section_{page_index}_unmatched_error")
                         break
 
                     nav_btn, nav_type = await filler.find_navigation_button()
@@ -155,7 +160,7 @@ class BatchRunner:
                 report.total_fields = len(all_filled_records)
                 report.filled_fields = all_filled_records
 
-                if report.unmatched_required_fields:
+                if report.unmatched_required_fields or report.error_message:
                     report.status = FormStatus.FAILED
                     report.duration_sec = time.time() - start_time
                     reporter.save_json_log(report)

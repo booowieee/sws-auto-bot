@@ -103,8 +103,8 @@ def load_synonyms(path: Optional[Path] = None) -> Dict[str, SynonymEntry]:
     for key, item in raw_data.items():
         if isinstance(item, dict):
             synonyms[key] = SynonymEntry(
-                keywords=item.get("keywords", []),
-                patterns=item.get("patterns", []),
-                profile_key=item.get("profile_key", ""),
+                keywords=item.get("keywords") or [],
+                patterns=item.get("patterns") or [],
+                profile_key=item.get("profile_key") or "",
             )
     return synonyms

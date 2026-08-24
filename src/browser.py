@@ -25,9 +25,9 @@ def clean_profile_locks(profile_dir: Path) -> None:
     lock_names = ["SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"]
     for lock_name in lock_names:
         lock_path = profile_dir / lock_name
-        if lock_path.exists():
+        if lock_path.exists() or lock_path.is_symlink():
             try:
-                if lock_path.is_dir():
+                if lock_path.is_dir() and not lock_path.is_symlink():
                     shutil.rmtree(lock_path, ignore_errors=True)
                 else:
                     lock_path.unlink(missing_ok=True)

@@ -3,7 +3,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 import aiohttp
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.config import Config
 from src.logger import logger
@@ -13,9 +13,14 @@ from src.models import FormField, UserProfile
 class LLMFieldMatchResult(BaseModel):
     index: int
     matched_key: str = ""
-    resolved_value: str = ""
+    resolved_value: Optional[str] = ""
     selected_option: Optional[str] = None
     confidence: float = 85.0
+
+    @field_validator("resolved_value", mode="before")
+    @classmethod
+    def coerce_none_to_empty(cls, v: Any) -> str:
+        return "" if v is None else str(v)
 
 
 SYSTEM_PROMPT = """You are an automated form filler assistant for UK Seasonal Worker Scheme (SWS) applications.

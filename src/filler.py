@@ -153,24 +153,24 @@ class FormFiller:
         """Finds the question container by label text with fallback to index."""
         if field.label:
             # 1. Try finding container containing the exact label text
-            by_text = self.page.locator('[role="listitem"]').filter(has_text=field.label)
+            by_text = self.page.locator('[role="listitem"], [data-params]').filter(has_text=field.label)
             if await by_text.count() > 0:
                 return by_text.first
 
             # 2. Try with main part before parenthesis or newline
             clean_l = field.label.split("(")[0].split("\n")[0].strip()
             if clean_l and len(clean_l) >= 3:
-                by_prefix = self.page.locator('[role="listitem"]').filter(has_text=clean_l)
+                by_prefix = self.page.locator('[role="listitem"], [data-params]').filter(has_text=clean_l)
                 if await by_prefix.count() > 0:
                     return by_prefix.first
 
         # 3. Fallback to question index
-        containers = self.page.locator('[role="listitem"]')
+        containers = self.page.locator('[role="listitem"], [data-params]')
         count = await containers.count()
         if 0 < field.index <= count:
             return containers.nth(field.index - 1)
 
-        return containers.first if count > 0 else self.page.locator('[role="listitem"]')
+        return containers.first if count > 0 else self.page.locator('[role="listitem"], [data-params]')
 
     async def _type_text(self, field: FormField, text: str) -> None:
         locator = None
@@ -182,10 +182,7 @@ class FormFiller:
             if await container.count() > 0:
                 locator = container.locator('input[type="text"], input:not([type]), textarea')
 
-        if not locator or await locator.count() == 0:
-            locator = self.page.locator('input[type="text"], input:not([type]), textarea')
-
-        if await locator.count() > 0:
+        if locator and await locator.count() > 0:
             try:
                 await locator.first.click(force=True, timeout=2000)
             except Exception:
@@ -197,7 +194,7 @@ class FormFiller:
             for char in text:
                 await locator.first.press_sequentially(char, delay=random.uniform(15, 55))
         else:
-            logger.warning(f"Could not locate text input for '{field.label}'")
+            logger.warning(f"Could not locate text input for field [{field.index}] '{field.label}'")
 
     async def _select_radio(self, field: FormField, option_text: str) -> None:
         container = await self._get_container(field)
@@ -244,6 +241,7 @@ class FormFiller:
 
     async def _select_dropdown(self, field: FormField, option_text: str) -> None:
         container = await self._get_container(field)
+        target_clean = option_text.lower().strip()
 
         dropdown = container.locator('[role="listbox"]')
         if await dropdown.count() > 0:

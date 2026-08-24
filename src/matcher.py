@@ -225,8 +225,9 @@ class FieldMatcher:
         # 3. Substring / contained match
         for opt in options:
             opt_lower = opt.lower().strip()
-            if target_clean in opt_lower or opt_lower in target_clean:
-                return opt
+            if len(target_clean) >= 3 and len(opt_lower) >= 3:
+                if target_clean in opt_lower or opt_lower in target_clean:
+                    return opt
 
         # 4. Fuzzy match
         best_opt = None
