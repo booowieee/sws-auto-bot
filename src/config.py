@@ -51,6 +51,13 @@ class Config:
         "Chrome/131.0.0.0 Safari/537.36",
     )
 
+    # LLM Fallback (Tier 2) Settings
+    LLM_FALLBACK_ENABLED: bool = os.getenv("LLM_FALLBACK_ENABLED", "false").lower() in ("true", "1", "yes")
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
+    LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "4.0"))
+
 
 def ensure_directories() -> None:
     Config.DATA_DIR.mkdir(parents=True, exist_ok=True)

@@ -12,10 +12,13 @@
 
 ## Возможности
 
-- **Парсинг и маппинг полей:**
-  - Распознавание названий полей на румынском, английском и русском языках.
-  - Три уровня сопоставления: составные regex-шаблоны, точные ключевые слова, нечеткий поиск (RapidFuzz).
+- **Двухуровневый гибридный маппинг полей (2-Tier Matching):**
+  - **Tier 1 (Локальный):** 85 полей в словаре, распознавание на румынском, английском и русском языках. Составные regex-шаблоны, границы слов, RapidFuzz (1-3 мс).
+  - **Tier 2 (LLM Fallback):** Пакетный асинхронный запрос к LLM (Groq, Gemini, OpenAI, OpenRouter) для редких или нестандартных формулировок вопросов.
   - Поддержка text, textarea, radio, checkbox, dropdown и date полей.
+- **Режим автопилота (--watch):**
+  - Непрерывный легковесный HTTP-опрос закрытой формы без запуска браузера.
+  - Мгновенный запуск Playwright и отправка анкеты при открытии набора.
 - **Ввод с задержками:**
   - Посимвольный ввод текста с динамическими случайными паузами (15-55 мс).
   - Случайные паузы между переходами к следующим полям.
@@ -54,9 +57,15 @@
                           3. Определение типов      3. Переход по секциям
                                  |                  4. Нажатие Submit
                           +------+------+                  |
+                          | Tier 1:     |                  |
                           | FieldMatcher|                  |
-                          | - Regex     |                  |
-                          | - RapidFuzz |                  |
+                          | (Regex/Fuzz)|                  |
+                          +------+------+                  |
+                                 | (unmapped fields)       |
+                          +------+------+                  |
+                          | Tier 2:     |                  |
+                          | LLM Fallback|                  |
+                          | (Groq/OpenAI)                  |
                           +-------------+                  |
                                                            |
    +------------------------------------------------------+
@@ -90,6 +99,7 @@ sws-auto-bot/
 │   ├── browser.py               # Управление Playwright и сессиями
 │   ├── analyzer.py              # Парсинг DOM структуры Google Forms
 │   ├── matcher.py               # Сопоставление полей с профилем
+│   ├── llm.py                   # Tier 2 LLM Fallback клиент (OpenAI-compatible)
 │   ├── filler.py                # Заполнение полей и отправка
 │   ├── watcher.py               # Фоновый мониторинг и автозапуск
 │   ├── batch_runner.py          # Пакетный прогон и QA-бенчмарки
@@ -97,6 +107,7 @@ sws-auto-bot/
 ├── tests/
 │   ├── test_config.py
 │   ├── test_matcher.py
+│   ├── test_llm.py
 │   ├── test_watcher.py
 │   └── test_batch_runner.py
 ├── data/                        # Persistent профиль Chromium (в .gitignore)
@@ -132,9 +143,17 @@ playwright install chromium
    ```bash
    cp config/profile.example.yaml config/profile.yaml
    ```
-2. Скопируйте `.env.example` в `.env` и при необходимости укажите токен Telegram:
+2. Скопируйте `.env.example` в `.env` и укажите настройки (Telegram, LLM Fallback):
    ```bash
    cp .env.example .env
+   ```
+
+3. (Опционально) Включите Tier 2 LLM Fallback в `.env` для страховки от нестандартных вопросов:
+   ```env
+   LLM_FALLBACK_ENABLED=true
+   LLM_API_KEY=gsk_your_groq_api_key_here
+   LLM_BASE_URL=https://api.groq.com/openai/v1
+   LLM_MODEL=llama-3.3-70b-versatile
    ```
 
 ---

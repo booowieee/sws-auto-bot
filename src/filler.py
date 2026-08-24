@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 from playwright.async_api import Page, Locator
 
 from src.analyzer import FormAnalyzer
+from src.llm import LLMFallbackClient
 from src.logger import logger
 from src.matcher import FieldMatcher
 from src.models import (
@@ -24,14 +25,31 @@ SUBMIT_BUTTON_TEXTS = [
 ]
 
 NEXT_BUTTON_TEXTS = [
-    "următor",
-    "urmator",
-    "următorul",
-    "next",
-    "далее",
-    "дальше",
     "înainte",
     "inainte",
+    "următor",
+    "urmator",
+    "next",
+    "далее",
+    "следующая",
+]
+
+CLOSED_TEXTS = [
+    "nu mai acceptă răspunsuri",
+    "nu se mai acceptă răspunsuri",
+    "formularul nu mai acceptă",
+    "no longer accepting responses",
+    "is no longer accepting",
+    "больше не принимает ответы",
+    "форма закрыта",
+]
+
+REQUIRED_ERROR_TEXTS = [
+    "acesta este un câmp obligatoriu",
+    "this is a required question",
+    "это обязательный вопрос",
+    "обязательный вопрос",
+    "este un câmp obligatoriu",
 ]
 
 SUCCESS_CONFIRMATION_TEXTS = [
@@ -55,14 +73,41 @@ VALIDATION_ERROR_TEXTS = [
 class FormFiller:
     """Fills Google Forms fields and handles page navigation and submission."""
 
-    def __init__(self, page: Page, matcher: FieldMatcher):
+    def __init__(self, page: Page, matcher: FieldMatcher, llm_client: Optional[LLMFallbackClient] = None):
         self.page = page
         self.matcher = matcher
+        self.llm_client = llm_client or LLMFallbackClient()
 
     async def fill_current_section(self) -> Tuple[List[FieldMatch], List[FormField]]:
-        """Extracts visible fields, matches against profile, and fills them."""
+        """Extracts visible fields, matches against profile, executes LLM fallback if needed, and fills them."""
         fields = await FormAnalyzer.extract_fields(self.page)
         matches = self.matcher.match_all(fields)
+
+        # Tier 2: LLM Fallback for unmapped fields
+        unmapped_fields = [m.field for m in matches if m.method == MatchMethod.UNMATCHED]
+        if unmapped_fields and self.llm_client.is_available:
+            logger.info(f"Tier 2 LLM Fallback triggered for {len(unmapped_fields)} unmapped field(s)...")
+            llm_results = await self.llm_client.match_batch(unmapped_fields, self.matcher.profile)
+            if llm_results:
+                result_map = {r.index: r for r in llm_results}
+                merged_matches: List[FieldMatch] = []
+                for m in matches:
+                    if m.method == MatchMethod.UNMATCHED and m.field.index in result_map:
+                        res = result_map[m.field.index]
+                        merged_matches.append(
+                            FieldMatch(
+                                field=m.field,
+                                matched_key=res.matched_key,
+                                profile_key=res.matched_key,
+                                resolved_value=res.resolved_value,
+                                selected_option=res.selected_option,
+                                method=MatchMethod.FALLBACK,
+                                confidence=res.confidence,
+                            )
+                        )
+                    else:
+                        merged_matches.append(m)
+                matches = merged_matches
 
         unmatched_required: List[FormField] = []
 
