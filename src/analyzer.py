@@ -4,10 +4,13 @@ from playwright.async_api import Page, ElementHandle
 
 from src.logger import logger
 from src.models import FieldType, FormField
+from src.text_utils import strip_diacritics
 
 CLOSED_TEXT_MARKERS = [
     "nu mai acceptă răspunsuri",
     "nu mai accepta raspunsuri",
+    "nu se mai acceptă răspunsuri",
+    "nu se mai accepta raspunsuri",
     "no longer accepting responses",
     "the form is closed",
     "не принимает ответы",
@@ -28,8 +31,11 @@ class FormAnalyzer:
             return True, f"Closed URL detected: {current_url}"
 
         body_text = (await page.inner_text("body")).lower()
+        body_nd = strip_diacritics(body_text)
+
         for marker in CLOSED_TEXT_MARKERS:
-            if marker in body_text:
+            marker_nd = strip_diacritics(marker.lower())
+            if marker in body_text or marker_nd in body_nd:
                 return True, f"Closed marker found in text: '{marker}'"
 
         return False, ""

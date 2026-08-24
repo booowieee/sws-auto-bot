@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from rapidfuzz import fuzz
 
@@ -12,6 +13,7 @@ from src.models import (
     SynonymEntry,
     UserProfile,
 )
+from src.text_utils import normalize_text, strip_diacritics
 
 # Confidence scores for each matching tier
 CONFIDENCE_PRIORITY = 100.0
@@ -66,67 +68,69 @@ class FieldMatcher:
         self.profile = profile
         self.synonyms = synonyms
         self.fuzzy_threshold = Config.FUZZY_THRESHOLD
-        # Precompile keyword boundary patterns to avoid re-compilation on every match
+        # Precompile keyword boundary patterns (both original and diacritic-stripped)
         self._compiled_keywords: Dict[str, List[Tuple[re.Pattern, str]]] = {}
         for syn_key, syn_entry in synonyms.items():
             compiled = []
             for kw in syn_entry.keywords:
-                kw_lower = kw.lower().strip()
-                try:
-                    pat = re.compile(r"\b" + re.escape(kw_lower) + r"\b")
-                    compiled.append((pat, kw_lower))
-                except re.error:
-                    continue
+                kw_clean = kw.lower().strip()
+                kw_nd = strip_diacritics(kw_clean)
+                for variant in set([kw_clean, kw_nd]):
+                    try:
+                        pat = re.compile(r"\b" + re.escape(variant) + r"\b")
+                        compiled.append((pat, variant))
+                    except re.error:
+                        continue
             self._compiled_keywords[syn_key] = compiled
 
     def match_field(self, field: FormField) -> FieldMatch:
-        """Matches a form field label to a profile attribute."""
-        # Normalize: strip HTML tags, brackets, negative parentheticals, collapse whitespace
-        clean_text = re.sub(r"<[^>]+>", " ", field.label.lower())
-        clean_text = re.sub(r"\[[^\]]+\]", " ", clean_text)
-        clean_text = re.sub(r"\((do\s*not|nu\s*include[tț]i|не\s*указывайте|без)[^\)]*\)", " ", clean_text)
-        clean_text = re.sub(r"[_\-:\*]+", " ", clean_text)
-        label_clean = re.sub(r"\s+", " ", clean_text).strip()
+        """Matches a form field label to a profile attribute with universal diacritic tolerance."""
+        # Normalize text: strip HTML, brackets, negative guidelines, delimiters
+        label_clean = normalize_text(field.label)
+        raw_clean = re.sub(r"\s+", " ", re.sub(r"[_\-:\*\.,\(\)\/\\]+", " ", field.label.lower())).strip()
 
         # Step 0: Priority routing for emergency/kin fields
-        # These must be checked before full_name to prevent mismatches
         for pkey in self.PRIORITY_KEYS:
             if pkey in self.synonyms:
                 entry = self.synonyms[pkey]
-                if self._check_regex_patterns(label_clean, entry.patterns):
+                if self._check_regex_patterns(label_clean, entry.patterns) or self._check_regex_patterns(raw_clean, entry.patterns):
                     return self._create_match(field, pkey, MatchMethod.REGEX_PATTERN, CONFIDENCE_PRIORITY)
 
-        # Step 1: Compound name prioritization (full_name before first/last name)
+        # Step 1: Compound name prioritization
         if "full_name" in self.synonyms:
-            if self._check_regex_patterns(label_clean, self.synonyms["full_name"].patterns):
+            if self._check_regex_patterns(label_clean, self.synonyms["full_name"].patterns) or self._check_regex_patterns(raw_clean, self.synonyms["full_name"].patterns):
                 return self._create_match(field, "full_name", MatchMethod.REGEX_PATTERN, CONFIDENCE_PRIORITY)
 
         # Step 2: Regex patterns across all synonym entries
         for syn_key, syn_entry in self.synonyms.items():
-            if self._check_regex_patterns(label_clean, syn_entry.patterns):
+            if self._check_regex_patterns(label_clean, syn_entry.patterns) or self._check_regex_patterns(raw_clean, syn_entry.patterns):
                 return self._create_match(field, syn_key, MatchMethod.REGEX_PATTERN, CONFIDENCE_REGEX)
 
-        # Step 3: Exact keyword boundary matching (longest match wins)
+        # Step 3: Exact keyword boundary matching
         best_keyword_match: Optional[str] = None
         max_keyword_len = 0
 
         for syn_key, compiled_list in self._compiled_keywords.items():
-            for pat, kw_lower in compiled_list:
-                if pat.search(label_clean):
-                    if len(kw_lower) > max_keyword_len:
-                        max_keyword_len = len(kw_lower)
+            for pat, variant in compiled_list:
+                if pat.search(label_clean) or pat.search(raw_clean):
+                    if len(variant) > max_keyword_len:
+                        max_keyword_len = len(variant)
                         best_keyword_match = syn_key
 
         if best_keyword_match:
             return self._create_match(field, best_keyword_match, MatchMethod.EXACT_KEYWORD, CONFIDENCE_KEYWORD)
 
-        # Step 4: Fuzzy matching with RapidFuzz
+        # Step 4: Fuzzy matching with RapidFuzz (both diacritic-stripped)
         best_fuzzy_key: Optional[str] = None
         highest_score = 0.0
 
         for syn_key, syn_entry in self.synonyms.items():
             for kw in syn_entry.keywords:
-                score = fuzz.token_set_ratio(label_clean, kw.lower())
+                kw_nd = strip_diacritics(kw.lower().strip())
+                score = max(
+                    fuzz.token_set_ratio(label_clean, kw_nd),
+                    fuzz.token_set_ratio(raw_clean, kw.lower().strip()),
+                )
                 if score > highest_score and score >= self.fuzzy_threshold:
                     highest_score = score
                     best_fuzzy_key = syn_key
@@ -190,16 +194,31 @@ class FieldMatcher:
             elif isinstance(current, dict) and part in current:
                 current = current[part]
             else:
-                return ""
+                current = ""
+                break
+
+        # Fallback: if age is requested but empty in profile, auto-compute from date_of_birth
+        if profile_key == "personal.age" and not current:
+            dob = self._resolve_profile_value("personal.date_of_birth")
+            if dob:
+                for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y", "%Y-%m-%d"):
+                    try:
+                        dt = datetime.strptime(str(dob).strip(), fmt)
+                        now = datetime.now()
+                        years = now.year - dt.year - ((now.month, now.day) < (dt.month, dt.day))
+                        return str(years)
+                    except ValueError:
+                        continue
 
         return current
 
-    @staticmethod
-    def _resolve_best_option(target_val: str, options: List[str]) -> Optional[str]:
+    @classmethod
+    def _resolve_best_option(cls, target_val: str, options: List[str]) -> Optional[str]:
         if not options:
             return None
 
         target_clean = target_val.lower().strip()
+        target_nodiacritics = strip_diacritics(target_clean)
 
         # Handle numeric scale options (e.g. 1 to 5)
         if all(opt.isdigit() for opt in options):
@@ -209,31 +228,40 @@ class FieldMatcher:
                 return next((opt for opt in ("5", "4", "3") if opt in options), options[-1])
             return options[-1]
 
-        # 1. Exact match
+        # 1. Exact match (with and without diacritics)
         for opt in options:
-            if opt.lower().strip() == target_clean:
+            opt_clean = opt.lower().strip()
+            if opt_clean == target_clean or strip_diacritics(opt_clean) == target_nodiacritics:
                 return opt
 
         # 2. Semantic synonym group match
         for key, syns in SEMANTIC_OPTION_MAP.items():
-            if target_clean in syns:
+            key_clean = key.lower().strip()
+            syns_clean = [s.lower().strip() for s in syns]
+            syns_nodiacritics = [strip_diacritics(s) for s in syns_clean]
+
+            if target_clean in syns_clean or target_nodiacritics in syns_nodiacritics or target_clean == key_clean:
                 for opt in options:
                     opt_lower = opt.lower().strip()
-                    if any(s in opt_lower for s in syns):
+                    opt_nodiacritics = strip_diacritics(opt_lower)
+                    if any(s in opt_lower for s in syns_clean) or any(s in opt_nodiacritics for s in syns_nodiacritics):
                         return opt
 
         # 3. Substring / contained match
         for opt in options:
             opt_lower = opt.lower().strip()
+            opt_nodiacritics = strip_diacritics(opt_lower)
             if len(target_clean) >= 3 and len(opt_lower) >= 3:
                 if target_clean in opt_lower or opt_lower in target_clean:
+                    return opt
+                if target_nodiacritics in opt_nodiacritics or opt_nodiacritics in target_nodiacritics:
                     return opt
 
         # 4. Fuzzy match
         best_opt = None
         max_score = 0.0
         for opt in options:
-            score = fuzz.token_set_ratio(target_clean, opt.lower())
+            score = fuzz.token_set_ratio(target_nodiacritics, strip_diacritics(opt.lower()))
             if score > max_score and score >= CONFIDENCE_FUZZY_MIN:
                 max_score = score
                 best_opt = opt

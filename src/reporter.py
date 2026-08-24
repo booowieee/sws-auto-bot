@@ -68,16 +68,15 @@ class ExecutionReporter:
         }.get(report.status, report.status.value.upper())
 
         caption = (
-            f"<b>[SWS Auto-Bot] Отчет выполнения: {status_text}</b>\n\n"
+            f"<b>[SWS Auto-Bot] Отчет: {status_text}</b>\n\n"
             f"<b>URL:</b> <code>{report.url}</code>\n"
             f"<b>Статус:</b> {report.status.value}\n"
-            f"<b>Время выполнения:</b> {report.duration_sec:.1f} сек.\n"
-            f"<b>Всего полей:</b> {report.total_fields}\n"
-            f"<b>Заполнено:</b> {len(report.filled_fields)}\n"
+            f"<b>Время:</b> {report.duration_sec:.1f} сек.\n"
+            f"<b>Полей:</b> {len(report.filled_fields)}/{report.total_fields}\n"
         )
 
         if report.unmatched_required_fields:
-            caption += f"\n<b>Нераспознанные обязательные поля:</b>\n"
+            caption += f"\n<b>Нераспознанные поля:</b>\n"
             for f in report.unmatched_required_fields[:5]:
                 caption += f"• <code>{f}</code>\n"
 

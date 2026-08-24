@@ -1,47 +1,29 @@
 # SWS Auto-Fill Bot
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?logo=playwright&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker--Compose-latest-2496ED?logo=docker&logoColor=white)
-![Telegram](https://img.shields.io/badge/Telegram-Bot_API-26A5E4?logo=telegram&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-
-Автоматическое заполнение и отправка регистрационных анкет Google Forms для программы UK Seasonal Worker Scheme (SWS). Заполняет форму при открытии набора оператором, до того как места закончатся.
+Автоматическое заполнение и отправка регистрационных анкет Google Forms для программы UK Seasonal Worker Scheme (SWS). Заполняет форму при открытии набора оператором.
 
 ---
 
 ## Возможности
 
-- **Двухуровневый гибридный маппинг полей (2-Tier Matching):**
-  - **Tier 1 (Локальный):** 85 полей в словаре, распознавание на румынском, английском и русском языках. Составные regex-шаблоны, границы слов, RapidFuzz (1-3 мс).
-  - **Tier 2 (LLM Fallback):** Пакетный асинхронный запрос к LLM (Groq, Gemini, OpenAI, OpenRouter) для редких или нестандартных формулировок вопросов.
-  - Поддержка text, textarea, radio, checkbox, dropdown и date полей.
-- **Режим автопилота (--watch):**
-  - Непрерывный легковесный HTTP-опрос закрытой формы без запуска браузера.
-  - Мгновенный запуск Playwright и отправка анкеты при открытии набора.
-- **Ввод с задержками:**
-  - Посимвольный ввод текста с динамическими случайными паузами (15-55 мс).
-  - Случайные паузы между переходами к следующим полям.
-  - Снятие признаков автоматизации браузера (`navigator.webdriver`).
+- **Маппинг полей:**
+  - Локальный словарь: 85 полей (румынский, английский, русский языки). Regex-шаблоны, границы слов, RapidFuzz.
+  - LLM Fallback: запрос к LLM (Gemini, Groq, OpenAI, Ollama) для нестандартных формулировок.
+  - Поддержка text, textarea, radio, checkbox, dropdown, date.
+- **Мониторинг (--watch):**
+  - HTTP-опрос закрытой формы без запуска браузера.
+  - Запуск Playwright и отправка анкеты при открытии набора.
 - **Многостраничные формы:**
-  - Автоматическое определение кнопок навигации (*Next* / *Urmator* / *Далее*).
-  - Последовательное заполнение каждой страницы до финальной кнопки отправки.
-  - Защита от зацикливания при ошибках валидации (лимит страниц, проверка изменения DOM).
+  - Определение кнопок навигации (Next / Urmator / Далее).
+  - Посекционное заполнение до финальной кнопки отправки.
+  - Защита от зацикливания при ошибках валидации.
 - **Сессия Google:**
   - Persistent browser profile для сохранения авторизации.
-  - Обход ограничений *"Ограничить до 1 ответа"*.
-- **Пакетное тестирование (Batch Runner):**
-  - Массовый прогон по списку форм из текстового файла или CSV.
-  - Автоматическая генерация JSON и Markdown отчетов с таблицей результатов.
-  - Подсчет общей точности маппинга полей и процента успешных заполнений.
+  - Поддержка форм с ограничением до 1 ответа.
 - **Отчетность:**
-  - Скриншоты ключевых этапов: загрузка, заполнение, отправка.
+  - Скриншоты заполненных секций и финальной отправки.
   - JSON-лог со списком всех заполненных полей.
-  - Отправка отчета со скриншотами в Telegram и автоудаление графики с диска.
-- **Отказоустойчивость:**
-  - Валидация обязательных полей перед отправкой.
-  - Проверка формы на статус закрытия (*closedform*).
-  - Проверка текста подтверждения после отправки.
+  - Отправка отчета со скриншотами в Telegram.
 
 ---
 
@@ -52,8 +34,8 @@
 
    Profile & Synonyms     Form Analyzer           Form Filler
 
-   profile.yaml  ----->  1. Загрузка DOM   ----->  1. Посимвольный ввод
-   synonyms.yaml         2. Извлечение ARIA        2. Выбор опций Radio/Select
+   profile.yaml  ----->  1. Загрузка DOM   ----->  1. Ввод текста
+   synonyms.yaml         2. Извлечение полей       2. Выбор Radio/Select
                           3. Определение типов      3. Переход по секциям
                                  |                  4. Нажатие Submit
                           +------+------+                  |
@@ -65,18 +47,16 @@
                           +------+------+                  |
                           | Tier 2:     |                  |
                           | LLM Fallback|                  |
-                          | (Groq/OpenAI)                  |
+                          | (Gemini/Groq)                  |
                           +-------------+                  |
                                                            |
    +------------------------------------------------------+
-   |                 Playwright Browser Engine            |
+   |                 Playwright Engine                    |
    | - Chromium persistent context                        |
-   | - Anti-bot evasion & stealth scripts                 |
    +------------------------------------------------------+
    |                 Execution Reporter                   |
-   | - Скриншоты этапов                                  |
+   | - Скриншоты секций                                   |
    | - Отправка отчета в Telegram                         |
-   | - Автоочистка скриншотов                            |
    +------------------------------------------------------+
 ```
 
@@ -89,8 +69,7 @@ sws-auto-bot/
 ├── config/
 │   ├── profile.example.yaml     # Шаблон персональных данных
 │   ├── profile.yaml             # Персональные данные (в .gitignore)
-│   ├── synonyms.yaml            # Словарь соответствий полей (RO/EN/RU)
-│   └── test_urls.example.txt    # Пример списка URL для пакетного теста
+│   └── synonyms.yaml            # Словарь соответствий полей (RO/EN/RU)
 ├── src/
 │   ├── __init__.py
 │   ├── __main__.py              # CLI интерфейс (click)
@@ -99,18 +78,20 @@ sws-auto-bot/
 │   ├── browser.py               # Управление Playwright и сессиями
 │   ├── analyzer.py              # Парсинг DOM структуры Google Forms
 │   ├── matcher.py               # Сопоставление полей с профилем
-│   ├── llm.py                   # Tier 2 LLM Fallback клиент (OpenAI-compatible)
+│   ├── llm.py                   # LLM клиент
+│   ├── llm_router.py            # Каскадный LLM роутер с кэшем
 │   ├── filler.py                # Заполнение полей и отправка
-│   ├── watcher.py               # Фоновый мониторинг и автозапуск
-│   ├── batch_runner.py          # Пакетный прогон и QA-бенчмарки
-│   └── reporter.py              # Логирование, скриншоты, Telegram
-├── tests/
-│   ├── test_config.py
-│   ├── test_matcher.py
-│   ├── test_llm.py
-│   ├── test_watcher.py
-│   └── test_batch_runner.py
-├── data/                        # Persistent профиль Chromium (в .gitignore)
+│   ├── watcher.py               # Фоновый мониторинг формы
+│   ├── watcher_manager.py       # Пул фоновых задач мониторинга
+│   ├── batch_runner.py          # Пакетный прогон
+│   ├── reporter.py              # Логирование, скриншоты, Telegram
+│   └── bot/                     # Telegram панель управления
+│       ├── __init__.py
+│       ├── bot.py               # Сервис Telegram бота
+│       ├── db.py                # SQLite база данных
+│       ├── handlers.py          # Обработчики команд
+│       └── keyboards.py         # Клавиатуры
+├── data/                        # Persistent профиль Chromium и БД (в .gitignore)
 ├── logs/                        # JSON-логи выполнения
 ├── screenshots/                 # Временные скриншоты (удаляются после отправки)
 ├── Dockerfile
@@ -137,23 +118,15 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 3. Настройка конфигурации
+### 3. Конфигурация
 
-1. Скопируйте шаблон профиля и заполните свои данные:
+1. Скопируйте шаблон профиля и укажите свои данные:
    ```bash
    cp config/profile.example.yaml config/profile.yaml
    ```
-2. Скопируйте `.env.example` в `.env` и укажите настройки (Telegram, LLM Fallback):
+2. Скопируйте `.env.example` в `.env` и задайте параметры:
    ```bash
    cp .env.example .env
-   ```
-
-3. (Опционально) Включите Tier 2 LLM Fallback в `.env` для страховки от нестандартных вопросов:
-   ```env
-   LLM_FALLBACK_ENABLED=true
-   LLM_API_KEY=gsk_your_groq_api_key_here
-   LLM_BASE_URL=https://api.groq.com/openai/v1
-   LLM_MODEL=llama-3.3-70b-versatile
    ```
 
 ---
@@ -162,22 +135,22 @@ playwright install chromium
 
 ### 1. Первичная авторизация Google (один раз)
 
-Если целевая форма требует авторизации в Google-аккаунте:
+Если форма требует авторизации в Google-аккаунте:
 
 ```bash
 python -m src.__main__ --login
 ```
 
-Откроется окно браузера. Авторизуйтесь в Google-аккаунте и закройте браузер. Сессия сохранится в `data/chrome_profile`.
+Откроется окно браузера. Авторизуйтесь и закройте окно. Сессия сохранится в `data/chrome_profile`.
 
-Проверить статус сессии:
+Проверка статуса сессии:
 ```bash
 python -m src.__main__ --check-session
 ```
 
 ### 2. Тестовый запуск (Dry-Run без отправки)
 
-Заполняет форму, делает скриншоты, но **не нажимает** кнопку Submit:
+Заполняет форму, сохраняет скриншоты, не нажимает Submit:
 
 ```bash
 python -m src.__main__ --url "https://docs.google.com/forms/d/e/.../viewform" --test
@@ -189,66 +162,52 @@ python -m src.__main__ --url "https://docs.google.com/forms/d/e/.../viewform" --
 python -m src.__main__ --url "https://docs.google.com/forms/d/e/.../viewform"
 ```
 
-Для визуальной отладки добавьте флаг `--headed`.
+### 4. Telegram бот (--bot)
 
-### 4. Режим автопилота / слежения (--watch)
-
-Опрашивает закрытую форму через легковесные HTTP-запросы (без расхода ресурсов браузера). Как только форма открывается, бот мгновенно запускает Playwright, заполняет все поля, отправляет форму и присылает отчет со скриншотами в Telegram:
+Запуск панели управления через Telegram Bot API:
 
 ```bash
-# Слежение с интервалом проверки 30 секунд (по умолчанию)
+python -m src.__main__ --bot
+```
+
+**Команды бота:**
+- `/status` - статус мониторинга и список задач
+- `/watch <url> [сек] [--test]` - запустить слежение за формой
+- `/unwatch <url>` - остановить слежение
+- `/fill <url> [--test]` - заполнить форму из чата
+- `/profile` - просмотр данных профиля
+- `/logs` - последние отчеты
+- `/whitelist` - управление доступом пользователей
+
+### 5. Режим слежения из CLI (--watch)
+
+Опрашивает закрытую форму через HTTP-запросы. При открытии запускает Playwright, заполняет поля, отправляет форму и присылает отчет в Telegram:
+
+```bash
+# Проверка каждые 30 секунд
 python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform"
 
-# Слежение с интервалом 10 секунд в тестовом режиме (без нажатия Submit)
+# Проверка каждые 10 секунд в тестовом режиме
 python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 10 --test
-
-# Настройка максимального времени ожидания (в часах)
-python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 15 --max-hours 48
 ```
-
-### 5. Пакетное тестирование (Batch Runner)
-
-Прогон по списку форм из файла:
-
-```bash
-# Текстовый файл с URL (по одному на строку)
-python -m src.__main__ --batch config/test_urls.example.txt --test
-
-# CSV/TSV файл (колонки: URL, название формы)
-python -m src.__main__ --batch forms.csv --test
-```
-
-Результаты сохраняются в `logs/benchmark_*.json` и `logs/benchmark_*.md`.
 
 ---
 
 ## Развертывание в Docker
 
 ```bash
-# Слежение за формой в фоне (автопилот)
-docker compose run -d --rm sws-auto-bot --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 20
+# Сборка образа
+docker compose build
 
-# Тестовый прогон одной формы
-docker compose run --rm sws-auto-bot --url "https://docs.google.com/forms/d/e/.../viewform" --test
+# Запуск бота в фоне (24/7)
+docker compose up -d
 
-# Пакетный прогон
-docker compose run --rm sws-auto-bot --batch config/test_urls.example.txt --test
-
-# Боевой запуск по прямому URL
-docker compose run --rm sws-auto-bot --url "https://docs.google.com/forms/d/e/.../viewform"
-```
-
----
-
-## Запуск тестов
-
-```bash
-pip install pytest
-pytest -v
+# Просмотр логов
+docker compose logs -f --tail 50
 ```
 
 ---
 
 ## Лицензия
 
-Проект распространяется под лицензией [MIT](LICENSE).
+[MIT](LICENSE)

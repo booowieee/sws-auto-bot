@@ -2,12 +2,14 @@ services:
   sws-auto-bot:
     build: .
     container_name: sws-auto-bot
-    restart: "no"
+    restart: unless-stopped
     env_file:
       - .env
     volumes:
-      - .:/app
-      - /app/__pycache__
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./screenshots:/app/screenshots
     ipc: host
     ulimits:
       core:
@@ -15,3 +17,4 @@ services:
         hard: 0
     environment:
       - HEADLESS=true
+    command: ["--bot"]

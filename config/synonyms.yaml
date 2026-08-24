@@ -310,6 +310,30 @@ date_of_birth:
     - 'когда\s*вы\s*родились'
   profile_key: personal.date_of_birth
 
+age:
+  keywords:
+    - "varsta"
+    - "virsta"
+    - "cati ani"
+    - "age"
+    - "your age"
+    - "candidate age"
+    - "how old"
+    - "возраст"
+    - "сколько лет"
+    - "ваш возраст"
+    - "полных лет"
+  patterns:
+    - '\\bv[aâ]rst[aă]\\b'
+    - '\\bage\\b'
+    - 'your\\s*age'
+    - 'how\\s*old'
+    - 'c[aâ][tț]i\\s*ani'
+    - '\\bвозраст\\b'
+    - 'сколько\\s*(вам\\s*)?лет'
+    - 'полных\\s*лет'
+  profile_key: personal.age
+
 place_of_birth:
   keywords:
     - "locul nasterii"

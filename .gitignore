@@ -23,12 +23,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing & Linting
+# Testing & QA
+tests/
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+test_urls.txt
+config/test_urls.example.txt
+config/test_urls.txt
 
 # User Sensitive Data & Profiles
 config/profile.yaml

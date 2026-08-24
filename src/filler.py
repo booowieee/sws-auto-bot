@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 from playwright.async_api import Page, Locator
 
 from src.analyzer import FormAnalyzer
-from src.llm import LLMFallbackClient
+from src.llm_router import LLMRouter
 from src.logger import logger
 from src.matcher import FieldMatcher
 from src.models import (
@@ -15,6 +15,7 @@ from src.models import (
     FormField,
     MatchMethod,
 )
+from src.text_utils import normalize_text, strip_diacritics
 
 SUBMIT_BUTTON_TEXTS = [
     "trimite",
@@ -59,14 +60,12 @@ SUCCESS_CONFIRMATION_TEXTS = [
     "raspunsul a fost inregistrat",
     "your response has been recorded",
     "ответ записан",
-    "formular trimis",
 ]
 
 VALIDATION_ERROR_TEXTS = [
-    "răspuns obligatoriu",
-    "raspuns obligatoriu",
+    "acesta este un câmp obligatoriu",
     "this is a required question",
-    "обязательный вопрос",
+    "это обязательный вопрос",
     "este un câmp obligatoriu",
 ]
 
@@ -74,21 +73,21 @@ VALIDATION_ERROR_TEXTS = [
 class FormFiller:
     """Fills Google Forms fields and handles page navigation and submission."""
 
-    def __init__(self, page: Page, matcher: FieldMatcher, llm_client: Optional[LLMFallbackClient] = None):
+    def __init__(self, page: Page, matcher: FieldMatcher, llm_router: Optional[LLMRouter] = None):
         self.page = page
         self.matcher = matcher
-        self.llm_client = llm_client or LLMFallbackClient()
+        self.llm_router = llm_router or LLMRouter()
 
     async def fill_current_section(self) -> Tuple[List[FieldMatch], List[FormField]]:
         """Extracts visible fields, matches against profile, executes LLM fallback if needed, and fills them."""
         fields = await FormAnalyzer.extract_fields(self.page)
         matches = self.matcher.match_all(fields)
 
-        # Tier 2: LLM Fallback for unmapped fields
+        # Tier 2: LLM Fallback with Semantic Caching for unmapped fields
         unmapped_fields = [m.field for m in matches if m.method == MatchMethod.UNMATCHED]
-        if unmapped_fields and self.llm_client.is_available:
+        if unmapped_fields and self.llm_router.is_available:
             logger.info(f"Tier 2 LLM Fallback triggered for {len(unmapped_fields)} unmapped field(s)...")
-            llm_results = await self.llm_client.match_batch(unmapped_fields, self.matcher.profile)
+            llm_results = await self.llm_router.resolve_batch(unmapped_fields, self.matcher.profile)
             if llm_results:
                 result_map = {r.index: r for r in llm_results}
                 merged_matches: List[FieldMatch] = []
@@ -150,91 +149,164 @@ class FormFiller:
             raise
 
     async def _get_container(self, field: FormField) -> Locator:
-        """Finds the question container by label text with fallback to index."""
-        if field.label:
-            # 1. Try finding container containing the exact label text
-            by_text = self.page.locator('[role="listitem"], [data-params]').filter(has_text=field.label)
-            if await by_text.count() > 0:
-                return by_text.first
-
-            # 2. Try with main part before parenthesis or newline
-            clean_l = field.label.split("(")[0].split("\n")[0].strip()
-            if clean_l and len(clean_l) >= 3:
-                by_prefix = self.page.locator('[role="listitem"], [data-params]').filter(has_text=clean_l)
-                if await by_prefix.count() > 0:
-                    return by_prefix.first
-
-        # 3. Fallback to question index
-        containers = self.page.locator('[role="listitem"], [data-params]')
+        """Finds the question container by matching heading label, with 1-to-1 index fallback."""
+        containers = self.page.locator('[role="listitem"]')
         count = await containers.count()
+        if count == 0:
+            containers = self.page.locator('[data-params]')
+            count = await containers.count()
+
+        if count == 0:
+            return self.page.locator('body')
+
+        if field.label:
+            clean_target = re.sub(r"[\*\n\r\t]+", " ", field.label).strip().lower()
+            # 1. Search containers for matching heading
+            for i in range(count):
+                c = containers.nth(i)
+                heading = c.locator('[role="heading"], .M7eMe').first
+                if await heading.count() > 0:
+                    htext = (await heading.inner_text()).strip().lower()
+                    htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
+                    if clean_target == htext_clean or clean_target in htext_clean or (len(clean_target) >= 4 and htext_clean in clean_target):
+                        return c
+
+        # 2. Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
         if 0 < field.index <= count:
             return containers.nth(field.index - 1)
 
-        return containers.first if count > 0 else self.page.locator('[role="listitem"], [data-params]')
+        return containers.first
 
     async def _type_text(self, field: FormField, text: str) -> None:
+        if text is None:
+            text = ""
+
+        container = await self._get_container(field)
         locator = None
+
         if field.entry_id:
             locator = self.page.locator(f'input[name="{field.entry_id}"], textarea[name="{field.entry_id}"]')
 
         if not locator or await locator.count() == 0:
-            container = await self._get_container(field)
-            if await container.count() > 0:
-                locator = container.locator('input[type="text"], input:not([type]), textarea')
+            locator = container.locator('input[type="text"], input:not([type]), textarea')
 
         if locator and await locator.count() > 0:
+            target_input = locator.first
+            await target_input.scroll_into_view_if_needed()
             try:
-                await locator.first.click(force=True, timeout=2000)
+                await target_input.click(force=True, timeout=2000)
             except Exception:
-                await locator.first.focus()
+                await target_input.focus()
 
-            await locator.first.fill("")  # Clear existing content
-
-            # Human-like typing with random jitter
-            for char in text:
-                await locator.first.press_sequentially(char, delay=random.uniform(15, 55))
+            await target_input.fill(text)
         else:
             logger.warning(f"Could not locate text input for field [{field.index}] '{field.label}'")
 
     async def _select_radio(self, field: FormField, option_text: str) -> None:
+        if not option_text:
+            return
+
         container = await self._get_container(field)
+        target_clean = option_text.strip().lower()
+        target_nd = strip_diacritics(target_clean)
 
-        # Try finding radio by exact option label
-        radio = container.locator(f'[role="radio"][data-value="{option_text}"], [role="radio"][aria-label="{option_text}"]')
-        if await radio.count() > 0:
-            await radio.first.click(force=True, timeout=3000)
-            return
+        radios = container.locator('[role="radio"]')
+        count = await radios.count()
 
-        # Try matching radio containing the option text
-        radio_text = container.locator('[role="radio"]').filter(has_text=option_text)
-        if await radio_text.count() > 0:
-            await radio_text.first.click(force=True, timeout=3000)
-            return
+        for i in range(count):
+            radio = radios.nth(i)
+            data_val = (await radio.get_attribute("data-value") or "").strip().lower()
+            aria_label = (await radio.get_attribute("aria-label") or "").strip().lower()
+            inner_txt = (await radio.inner_text()).strip().lower()
 
-        # Fallback: click text label directly inside container
-        opt_label = container.get_by_text(option_text, exact=False)
+            parent_wrapper = radio.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
+            parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
+
+            data_val_nd = self._strip_diacritics(data_val)
+            aria_label_nd = self._strip_diacritics(aria_label)
+            inner_txt_nd = self._strip_diacritics(inner_txt)
+            parent_txt_nd = self._strip_diacritics(parent_txt)
+
+            if (
+                target_clean in (data_val, aria_label, inner_txt)
+                or target_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
+                or target_clean in parent_txt
+                or target_nd in parent_txt_nd
+                or (len(target_clean) >= 3 and (target_clean in data_val or data_val in target_clean or target_nd in data_val_nd or data_val_nd in target_nd))
+            ):
+                await radio.scroll_into_view_if_needed()
+                try:
+                    await radio.click(force=True, timeout=2000)
+                except Exception:
+                    pass
+
+                checked = await radio.get_attribute("aria-checked")
+                if checked != "true" and await parent_wrapper.count() > 0:
+                    try:
+                        await parent_wrapper.click(force=True, timeout=2000)
+                    except Exception:
+                        pass
+                return
+
+        # 2. Fallback: text search inside container
+        opt_label = container.get_by_text(option_text, exact=False).first
         if await opt_label.count() > 0:
-            await opt_label.first.click(force=True, timeout=3000)
+            await opt_label.scroll_into_view_if_needed()
+            await opt_label.click(force=True, timeout=2000)
             return
 
         logger.warning(f"Could not locate radio option '{option_text}' in field '{field.label}'")
 
     async def _select_checkbox(self, field: FormField, option_text: str) -> None:
+        if not option_text:
+            return
+
         container = await self._get_container(field)
+        target_clean = option_text.strip().lower()
+        target_nd = self._strip_diacritics(target_clean)
 
-        cb = container.locator(f'[role="checkbox"][data-value="{option_text}"], [role="checkbox"][aria-label="{option_text}"]')
-        if await cb.count() > 0:
-            await cb.first.click(force=True, timeout=3000)
-            return
+        checkboxes = container.locator('[role="checkbox"]')
+        count = await checkboxes.count()
 
-        cb_text = container.locator('[role="checkbox"]').filter(has_text=option_text)
-        if await cb_text.count() > 0:
-            await cb_text.first.click(force=True, timeout=3000)
-            return
+        for i in range(count):
+            cb = checkboxes.nth(i)
+            data_val = (await cb.get_attribute("data-value") or "").strip().lower()
+            aria_label = (await cb.get_attribute("aria-label") or "").strip().lower()
+            inner_txt = (await cb.inner_text()).strip().lower()
 
-        opt_label = container.get_by_text(option_text, exact=False)
+            parent_wrapper = cb.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
+            parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
+
+            data_val_nd = self._strip_diacritics(data_val)
+            aria_label_nd = self._strip_diacritics(aria_label)
+            inner_txt_nd = self._strip_diacritics(inner_txt)
+            parent_txt_nd = self._strip_diacritics(parent_txt)
+
+            if (
+                target_clean in (data_val, aria_label, inner_txt)
+                or target_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
+                or target_clean in parent_txt
+                or target_nd in parent_txt_nd
+                or (len(target_clean) >= 3 and (target_clean in data_val or data_val in target_clean or target_nd in data_val_nd or data_val_nd in target_nd))
+            ):
+                await cb.scroll_into_view_if_needed()
+                try:
+                    await cb.click(force=True, timeout=2000)
+                except Exception:
+                    pass
+
+                checked = await cb.get_attribute("aria-checked")
+                if checked != "true" and await parent_wrapper.count() > 0:
+                    try:
+                        await parent_wrapper.click(force=True, timeout=2000)
+                    except Exception:
+                        pass
+                return
+
+        opt_label = container.get_by_text(option_text, exact=False).first
         if await opt_label.count() > 0:
-            await opt_label.first.click(force=True, timeout=3000)
+            await opt_label.scroll_into_view_if_needed()
+            await opt_label.click(force=True, timeout=2000)
             return
 
         logger.warning(f"Could not locate checkbox option '{option_text}' in field '{field.label}'")
@@ -362,7 +434,7 @@ class FormFiller:
         return val_clean
 
     async def find_navigation_button(self) -> Tuple[Optional[Locator], str]:
-        """Detects whether current page has a 'Next' or 'Submit' button."""
+        """Detects whether current page has a 'Next' or 'Submit' button with universal diacritic tolerance."""
         buttons = self.page.locator('[role="button"]')
         button_count = await buttons.count()
 
@@ -371,15 +443,18 @@ class FormFiller:
 
         for i in range(button_count):
             btn = buttons.nth(i)
-            text = (await btn.inner_text()).lower().strip()
+            raw_text = (await btn.inner_text()).lower().strip()
+            text_nd = strip_diacritics(raw_text)
 
             for s_kw in SUBMIT_BUTTON_TEXTS:
-                if s_kw in text:
+                s_kw_nd = strip_diacritics(s_kw.lower())
+                if s_kw in raw_text or s_kw_nd in text_nd:
                     submit_btn = btn
                     break
 
             for n_kw in NEXT_BUTTON_TEXTS:
-                if n_kw in text:
+                n_kw_nd = strip_diacritics(n_kw.lower())
+                if n_kw in raw_text or n_kw_nd in text_nd:
                     next_btn = btn
                     break
 

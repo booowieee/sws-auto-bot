@@ -1,4 +1,5 @@
 import asyncio
+import re
 import signal
 import time
 from typing import Optional
@@ -7,6 +8,7 @@ import aiohttp
 
 from src.config import Config
 from src.logger import logger
+from src.text_utils import strip_diacritics
 
 
 # Multilingual closed-form markers (borrowed from sws_monitor_bot detection logic)
@@ -141,6 +143,7 @@ class FormWatcher:
 
                     html = await resp.text()
                     html_lower = html.lower()
+                    html_nd = strip_diacritics(html_lower)
                     final_url = str(resp.url).lower()
 
                     # Closed: URL contains closedform
@@ -150,11 +153,19 @@ class FormWatcher:
 
                     # Closed: known closure text markers
                     for marker in CLOSED_MARKERS:
-                        if marker in html_lower:
+                        marker_nd = strip_diacritics(marker.lower())
+                        if marker in html_lower or marker_nd in html_nd:
                             logger.debug(f"Form closed (text marker: '{marker}')")
                             return False
 
-                    # Open: active form elements found
+                    # Open check 1: JavaScript Form Data Blob (FB_PUBLIC_LOAD_DATA_)
+                    if "FB_PUBLIC_LOAD_DATA_" in html:
+                        match = re.search(r"FB_PUBLIC_LOAD_DATA_\s*=\s*(\[.+?\]);\s*</script>", html, re.DOTALL)
+                        if match and len(match.group(1)) > 300:
+                            # Form payload with fields exists
+                            return True
+
+                    # Open check 2: active form elements found in DOM
                     has_inputs = any(ind in html_lower for ind in OPEN_INDICATORS)
                     if has_inputs:
                         return True

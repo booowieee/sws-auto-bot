@@ -61,6 +61,7 @@ class PersonalInfo(BaseModel):
     height: str = ""
     weight: str = ""
     tattoos_marks: str = ""
+    age: str = ""
     age_confirmation: str = ""
     languages_spoken: str = ""
 

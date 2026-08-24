@@ -58,6 +58,12 @@ class Config:
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
     LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "4.0"))
 
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "") or LLM_API_KEY
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+
 
 def ensure_directories() -> None:
     Config.DATA_DIR.mkdir(parents=True, exist_ok=True)

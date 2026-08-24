@@ -39,9 +39,6 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
             logger.info(f"Navigating to Google Form: {url}")
             await page.goto(url, wait_until="networkidle")
 
-            # Milestone 1: Form loaded
-            await reporter.capture_milestone("01_form_loaded")
-
             # Check if form is closed
             is_closed, close_reason = await FormAnalyzer.is_form_closed(page)
             if is_closed:
@@ -78,8 +75,11 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                     logger.error(err_msg)
                     report.unmatched_required_fields = unmatched_labels
                     report.error_message = err_msg
-                    await reporter.capture_milestone(f"section_{page_index}_unmatched_error")
+                    await reporter.capture_milestone(f"section_{page_index:02d}_unmatched_error")
                     break
+
+                # Capture screenshot of filled section
+                await reporter.capture_milestone(f"section_{page_index:02d}_filled")
 
                 nav_btn, nav_type = await filler.find_navigation_button()
 
@@ -95,6 +95,7 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                         err_msg = f"Section #{page_index} failed to advance after clicking Next (validation error)"
                         logger.error(err_msg)
                         report.error_message = err_msg
+                        await reporter.capture_milestone(f"section_{page_index:02d}_nav_error")
                         break
 
                     page_index += 1
@@ -112,9 +113,6 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                 reporter.save_json_log(report)
                 await reporter.send_telegram_report(report)
                 return 1
-
-            # Milestone 2: Form completely filled
-            await reporter.capture_milestone("02_form_filled")
 
             if is_test:
                 logger.info("Test mode enabled: skipping Submit button click.")
@@ -213,6 +211,7 @@ from src.batch_runner import BatchRunner
 @click.option("--login", is_flag=True, help="One-time manual Google authentication in headed browser.")
 @click.option("--check-session", is_flag=True, help="Checks whether persistent Google session is active.")
 @click.option("--headed", is_flag=True, help="Run browser in visible (headed) mode for debugging.")
+@click.option("--bot", is_flag=True, help="Run interactive Telegram Bot Control Plane.")
 def main(
     url: Optional[str],
     batch: Optional[Path],
@@ -223,8 +222,14 @@ def main(
     login: bool,
     check_session: bool,
     headed: bool,
+    bot: bool,
 ):
     """SWS Auto-Fill Bot: Automated Google Forms submission tool."""
+    if bot:
+        from src.bot.bot import run_bot_service
+        asyncio.run(run_bot_service())
+        return
+
     if login:
         asyncio.run(run_login_flow())
         return
@@ -259,7 +264,7 @@ def main(
         sys.exit(exit_code)
 
     if not url:
-        click.echo("Error: Please provide a Google Form URL using --url, a batch file with --batch, --watch for autopilot mode, or --login / --check-session")
+        click.echo("Error: Please provide a Google Form URL using --url, a batch file with --batch, --watch for autopilot, --bot for Telegram control plane, or --login / --check-session")
         sys.exit(1)
 
     exit_code = asyncio.run(run_autofill(url=url, is_test=test, headless=headless_mode))
