@@ -1,5 +1,6 @@
 import asyncio
 import random
+import re
 from datetime import datetime
 from typing import List, Optional, Tuple
 from playwright.async_api import Page, Locator
