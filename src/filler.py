@@ -163,13 +163,16 @@ class FormFiller:
         if not locator or await locator.count() == 0:
             locator = self.page.get_by_label(field.label, exact=False)
 
-        await locator.first.click()
+        try:
+            await locator.first.click(force=True, timeout=2000)
+        except Exception:
+            await locator.first.focus()
+
         await locator.first.fill("")  # Clear existing content
 
         # Human-like typing with random jitter
         for char in text:
-            await locator.first.press(char)
-            await asyncio.sleep(random.uniform(0.015, 0.055))
+            await locator.first.press_sequentially(char, delay=random.uniform(15, 55))
 
     async def _select_radio(self, field: FormField, option_text: str) -> None:
         containers = self.page.locator('[role="listitem"]')
@@ -178,19 +181,19 @@ class FormFiller:
         # Try finding radio by exact option label
         radio = container.locator(f'[role="radio"][data-value="{option_text}"], [role="radio"][aria-label="{option_text}"]')
         if await radio.count() > 0:
-            await radio.first.click()
+            await radio.first.click(force=True, timeout=3000)
             return
 
         # Try matching radio containing the option text
         radio_text = container.locator('[role="radio"]').filter(has_text=option_text)
         if await radio_text.count() > 0:
-            await radio_text.first.click()
+            await radio_text.first.click(force=True, timeout=3000)
             return
 
         # Fallback: click text label directly inside container
         opt_label = container.get_by_text(option_text, exact=False)
         if await opt_label.count() > 0:
-            await opt_label.first.click()
+            await opt_label.first.click(force=True, timeout=3000)
             return
 
         logger.warning(f"Could not locate radio option '{option_text}' in field '{field.label}'")
@@ -201,17 +204,17 @@ class FormFiller:
 
         cb = container.locator(f'[role="checkbox"][data-value="{option_text}"], [role="checkbox"][aria-label="{option_text}"]')
         if await cb.count() > 0:
-            await cb.first.click()
+            await cb.first.click(force=True, timeout=3000)
             return
 
         cb_text = container.locator('[role="checkbox"]').filter(has_text=option_text)
         if await cb_text.count() > 0:
-            await cb_text.first.click()
+            await cb_text.first.click(force=True, timeout=3000)
             return
 
         opt_label = container.get_by_text(option_text, exact=False)
         if await opt_label.count() > 0:
-            await opt_label.first.click()
+            await opt_label.first.click(force=True, timeout=3000)
             return
 
         logger.warning(f"Could not locate checkbox option '{option_text}' in field '{field.label}'")

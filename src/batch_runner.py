@@ -135,7 +135,7 @@ class BatchRunner:
                     nav_btn, nav_type = await filler.find_navigation_button()
                     if nav_type == "next" and nav_btn:
                         old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                        await nav_btn.click()
+                        await nav_btn.click(force=True, timeout=5000)
                         await asyncio.sleep(1.2)
                         await page.wait_for_load_state("networkidle")
 

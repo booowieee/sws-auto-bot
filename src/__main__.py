@@ -86,7 +86,7 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                 if nav_type == "next" and nav_btn:
                     logger.info(f"Navigating to next section from section #{page_index}...")
                     old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                    await nav_btn.click()
+                    await nav_btn.click(force=True, timeout=5000)
                     await asyncio.sleep(1.5)
                     await page.wait_for_load_state("networkidle")
 
