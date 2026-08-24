@@ -58,6 +58,11 @@ class PersonalInfo(BaseModel):
     marital_status: str = ""
     city: str = ""
     country: str = ""
+    height: str = ""
+    weight: str = ""
+    tattoos_marks: str = ""
+    age_confirmation: str = ""
+    languages_spoken: str = ""
 
 
 class DocumentsInfo(BaseModel):
@@ -66,6 +71,11 @@ class DocumentsInfo(BaseModel):
     passport_expiry: str = ""
     passport_issuing_authority: str = ""
     id_card_number: str = ""
+    brp_number: str = ""
+    nino: str = ""
+    cos_reference: str = ""
+    share_code: str = ""
+    tb_certificate: str = ""
 
 
 class EmergencyContact(BaseModel):
@@ -77,6 +87,9 @@ class EmergencyContact(BaseModel):
 class ContactsInfo(BaseModel):
     phone: str = ""
     whatsapp: str = ""
+    viber: str = ""
+    telegram_contact: str = ""
+    social_media: str = ""
     email: str = ""
     address_street: str = ""
     address_city: str = ""
@@ -87,6 +100,22 @@ class ContactsInfo(BaseModel):
     emergency_contact: EmergencyContact = Field(default_factory=EmergencyContact)
 
 
+class HealthInfo(BaseModel):
+    medical_conditions: str = ""
+    allergies: str = ""
+    dietary_requirements: str = ""
+    blood_type: str = ""
+    covid_vaccination: str = ""
+    smoking: str = ""
+    swimming: str = ""
+
+
+class PPEInfo(BaseModel):
+    shoe_size: str = ""
+    tshirt_size: str = ""
+    trouser_size: str = ""
+
+
 class WorkInfo(BaseModel):
     experience_agriculture: bool = False
     experience_agriculture_text: str = ""
@@ -94,17 +123,38 @@ class WorkInfo(BaseModel):
     experience_uk: bool = False
     experience_uk_text: str = ""
     previous_employer: str = ""
+    previous_uk_employer: str = ""
+    previous_sws_operator: str = ""
     driving_license: str = ""
+    tractor_license: str = ""
+    forklift_cert: str = ""
+    first_aid_cert: str = ""
+    food_hygiene_cert: str = ""
+    heights_training: str = ""
     physical_fitness: str = ""
     caravan_acceptance: str = ""
     available_from: str = ""
     duration_stay: str = ""
     apply_alone: bool = True
     apply_alone_text: str = ""
+    applying_with: str = ""
     preferred_location: str = ""
     english_level: str = ""
     visa_refusal: str = ""
     criminal_record: str = ""
+    weekend_availability: str = ""
+    salary_expectations: str = ""
+    references: str = ""
+    travel_history: str = ""
+
+
+class LogisticsInfo(BaseModel):
+    preferred_airport: str = ""
+    accommodation_pref: str = ""
+    return_commitment: str = ""
+    bank_iban: str = ""
+    bank_swift: str = ""
+    bank_account_name: str = ""
 
 
 class AboutInfo(BaseModel):
@@ -121,6 +171,9 @@ class UserProfile(BaseModel):
     documents: DocumentsInfo = Field(default_factory=DocumentsInfo)
     contacts: ContactsInfo = Field(default_factory=ContactsInfo)
     work: WorkInfo = Field(default_factory=WorkInfo)
+    health: HealthInfo = Field(default_factory=HealthInfo)
+    ppe: PPEInfo = Field(default_factory=PPEInfo)
+    logistics: LogisticsInfo = Field(default_factory=LogisticsInfo)
     about: AboutInfo = Field(default_factory=AboutInfo)
 
 

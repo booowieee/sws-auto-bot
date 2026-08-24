@@ -15,6 +15,11 @@ personal:
   marital_status: "Necasatorit"
   city: "Chisinau"
   country: "Moldova"
+  height: "178"
+  weight: "75"
+  tattoos_marks: "Nu"
+  age_confirmation: "Da"
+  languages_spoken: "Romana, Rusa, Engleza (Basic)"
 
 documents:
   passport_number: "P00000000"
@@ -22,10 +27,18 @@ documents:
   passport_expiry: "01/01/2030"
   passport_issuing_authority: "ASP"
   id_card_number: "A00000000"
+  brp_number: ""
+  nino: ""
+  cos_reference: ""
+  share_code: ""
+  tb_certificate: "Nu este necesar"
 
 contacts:
   phone: "+1234567890"
   whatsapp: "+1234567890"
+  viber: "+1234567890"
+  telegram_contact: "@johndoe"
+  social_media: ""
   email: "user@example.com"
   address_street: "Strada Principala 1"
   address_city: "Chisinau"
@@ -45,17 +58,51 @@ work:
   experience_uk: false
   experience_uk_text: "Nu"
   previous_employer: "Agro Farm SRL"
+  previous_uk_employer: ""
+  previous_sws_operator: ""
   driving_license: "Da, Categoria B"
+  tractor_license: "Nu"
+  forklift_cert: "Nu"
+  first_aid_cert: "Nu"
+  food_hygiene_cert: "Nu"
+  heights_training: "Nu"
   physical_fitness: "Excelenta"
   caravan_acceptance: "Da"
   available_from: "Imediat"
   duration_stay: "6 luni (Full season)"
   apply_alone: true
   apply_alone_text: "Singur"
+  applying_with: ""
   preferred_location: "Oricare / Any location"
   english_level: "incepator"
   visa_refusal: "Nu"
   criminal_record: "Nu"
+  weekend_availability: "Da"
+  salary_expectations: ""
+  references: ""
+  travel_history: ""
+
+health:
+  medical_conditions: "Nu"
+  allergies: "Nu"
+  dietary_requirements: ""
+  blood_type: ""
+  covid_vaccination: "Da"
+  smoking: "Nu"
+  swimming: "Da"
+
+ppe:
+  shoe_size: "43"
+  tshirt_size: "L"
+  trouser_size: "M"
+
+logistics:
+  preferred_airport: "Chisinau (KIV)"
+  accommodation_pref: "Caravan"
+  return_commitment: "Da"
+  bank_iban: ""
+  bank_swift: ""
+  bank_account_name: ""
 
 about:
   ro: "Candidat din Moldova (24 ani), conditie fizica excelenta, nefumator. Am experienta practica in agricultura (recoltare capsuni, zmeura, struguri, legume si sortare in depozit). Lucrez la un combinat agroindustrial, sunt disciplinat, rezistent la efort fizic intens si disponibil pentru tot sezonul de 6 luni."

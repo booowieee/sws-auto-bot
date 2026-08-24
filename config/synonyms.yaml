@@ -1075,3 +1075,850 @@ about:
     - 'дополнительн.*информац'
     - 'detalii\s*suplimentare'
   profile_key: about.ro
+
+# ------------------------------------------------------------------------------
+# 9. MESSAGING & SOCIAL MEDIA
+# ------------------------------------------------------------------------------
+whatsapp:
+  keywords:
+    - whatsapp
+    - "numar whatsapp"
+    - "whatsapp number"
+    - "номер whatsapp"
+    - "ватсап"
+  patterns:
+    - 'whats\s*app'
+    - 'вотс\s*ап|ватс\s*ап'
+  profile_key: contacts.whatsapp
+
+viber:
+  keywords:
+    - viber
+    - "numar viber"
+    - "viber number"
+    - "номер viber"
+    - "вайбер"
+  patterns:
+    - 'viber'
+    - 'вайбер'
+  profile_key: contacts.viber
+
+telegram_contact:
+  keywords:
+    - telegram
+    - "telegram username"
+    - "numar telegram"
+    - "cont telegram"
+    - "телеграм"
+    - "номер телеграм"
+  patterns:
+    - 'telegram'
+    - 'телеграм'
+  profile_key: contacts.telegram_contact
+
+social_media:
+  keywords:
+    - "social media"
+    - "profil social media"
+    - "facebook"
+    - "instagram"
+    - "vk"
+    - "vkontakte"
+    - "link profil"
+    - "социальные сети"
+    - "профиль в соцсетях"
+    - "ссылка на профиль"
+  patterns:
+    - 'social\s*media'
+    - 'facebook|instagram|vkontakte|vk\.com'
+    - 'profil\s*(social|retea)'
+    - 'социальн.*сет'
+    - 'профиль.*(соцсет|vk|facebook)'
+    - 'retea\s*de\s*socializare'
+  profile_key: contacts.social_media
+
+# ------------------------------------------------------------------------------
+# 10. PHYSICAL ATTRIBUTES & PPE
+# ------------------------------------------------------------------------------
+height:
+  keywords:
+    - "inaltime"
+    - "height"
+    - "inaltimea"
+    - "рост"
+    - "ваш рост"
+    - "рост в см"
+  patterns:
+    - 'in[aă]l[tț]ime'
+    - 'height\s*(\(cm\))?'
+    - 'рост(\s*(в\s*)?см)?'
+  profile_key: personal.height
+
+weight:
+  keywords:
+    - "greutate"
+    - "weight"
+    - "greutatea"
+    - "вес"
+    - "ваш вес"
+    - "вес в кг"
+  patterns:
+    - 'greutate'
+    - 'weight\s*(\(kg\))?'
+    - 'вес(\s*(в\s*)?кг)?'
+  profile_key: personal.weight
+
+shoe_size:
+  keywords:
+    - "marimea incaltamintei"
+    - "marime incaltaminte"
+    - "shoe size"
+    - "boot size"
+    - "safety footwear size"
+    - "размер обуви"
+    - "размер ботинок"
+  patterns:
+    - 'm[aă]rime.*[iî]nc[aă]l[tț][aă]minte'
+    - '(shoe|boot|footwear)\s*size'
+    - 'размер\s*(обуви|ботинок|сапог)'
+  profile_key: ppe.shoe_size
+
+tshirt_size:
+  keywords:
+    - "marimea tricoului"
+    - "marime tricou"
+    - "t-shirt size"
+    - "top size"
+    - "размер футболки"
+    - "размер одежды"
+  patterns:
+    - 'm[aă]rime.*tricou'
+    - '(t-?\s*shirt|top)\s*size'
+    - 'clothing\s*size'
+    - 'размер\s*(футболк|одежд|майк)'
+  profile_key: ppe.tshirt_size
+
+trouser_size:
+  keywords:
+    - "marimea pantalonilor"
+    - "marime pantaloni"
+    - "trouser size"
+    - "waist size"
+    - "размер брюк"
+    - "размер штанов"
+  patterns:
+    - 'm[aă]rime.*pantalon'
+    - '(trouser|waist|pant)\s*size'
+    - 'размер\s*(брюк|штанов)'
+  profile_key: ppe.trouser_size
+
+tattoos_marks:
+  keywords:
+    - "tatuaje"
+    - "semne distinctive"
+    - "tattoos"
+    - "distinguishing marks"
+    - "татуировки"
+    - "особые приметы"
+    - "отличительные знаки"
+  patterns:
+    - 'tatuaj'
+    - 'semne\s*distinctiv'
+    - 'tattoo'
+    - 'distinguishing\s*mark'
+    - 'татуировк'
+    - 'особ.*примет'
+    - 'отличительн.*знак'
+  profile_key: personal.tattoos_marks
+
+# ------------------------------------------------------------------------------
+# 11. HEALTH & MEDICAL
+# ------------------------------------------------------------------------------
+medical_conditions:
+  keywords:
+    - "afectiuni medicale"
+    - "probleme de sanatate"
+    - "stare de sanatate"
+    - "medical conditions"
+    - "disabilities"
+    - "health conditions"
+    - "health problems"
+    - "physical limitations"
+    - "медицинские заболевания"
+    - "состояние здоровья"
+    - "проблемы со здоровьем"
+    - "хронические заболевания"
+    - "инвалидность"
+    - "ограничения по здоровью"
+  patterns:
+    - 'afec[tț]iuni\s*medicale'
+    - 'probleme\s*de\s*s[aă]n[aă]tate'
+    - 'stare\s*de\s*s[aă]n[aă]tate'
+    - 'medical\s*(condition|problem|issue|histor)'
+    - 'health\s*(condition|problem|issue)'
+    - '(physical|mental)\s*(limitation|disabilit)'
+    - 'медицинск.*(заболеван|проблем|состояни)'
+    - 'хроническ.*заболеван'
+    - 'ограничен.*здоров'
+    - 'инвалидност'
+  profile_key: health.medical_conditions
+
+allergies:
+  keywords:
+    - "alergii"
+    - "alergii alimentare"
+    - "alergii medicamentoase"
+    - "alergie albine"
+    - "allergies"
+    - "food allergies"
+    - "medication allergies"
+    - "bee sting allergy"
+    - "аллергия"
+    - "пищевая аллергия"
+    - "аллергия на лекарства"
+    - "аллергия на укусы"
+  patterns:
+    - 'alergi'
+    - 'allerg'
+    - 'аллерги'
+    - '(bee|insect)\s*sting'
+    - 'in[tț]ep[aă]tur.*albin'
+    - 'укус.*(пчел|насеком)'
+  profile_key: health.allergies
+
+dietary_requirements:
+  keywords:
+    - "cerinte alimentare"
+    - "regim alimentar"
+    - "preferinte alimentare"
+    - "dietary requirements"
+    - "dietary restrictions"
+    - "vegetarian"
+    - "vegan"
+    - "halal"
+    - "kosher"
+    - "диетические требования"
+    - "пищевые ограничения"
+    - "тип питания"
+    - "вегетарианец"
+  patterns:
+    - 'cerin[tț]e\s*alimentar'
+    - 'regim\s*alimentar'
+    - 'preferin[tț]e\s*alimentar'
+    - 'diet(ary)?\s*(requirement|restriction|preference|need)'
+    - '(vegetarian|vegan|halal|kosher)'
+    - 'диетическ.*(требован|ограничен|предпочтен)'
+    - 'пищев.*ограничен'
+    - 'тип\s*питания'
+  profile_key: health.dietary_requirements
+
+blood_type:
+  keywords:
+    - "grupa sanguina"
+    - "grupa de sange"
+    - "blood type"
+    - "blood group"
+    - "группа крови"
+    - "резус фактор"
+  patterns:
+    - 'grup[aă]\s*(sanguin[aă]|de\s*s[aâ]nge)'
+    - 'blood\s*(type|group)'
+    - 'групп.*кров'
+    - 'резус'
+  profile_key: health.blood_type
+
+covid_vaccination:
+  keywords:
+    - "vaccinare covid"
+    - "status vaccinare"
+    - "certificat vaccinare"
+    - "covid vaccination"
+    - "vaccination status"
+    - "covid vaccine"
+    - "вакцинация covid"
+    - "статус вакцинации"
+    - "прививка от ковид"
+  patterns:
+    - 'vaccin.*covid'
+    - 'covid.*vaccin'
+    - 'status\s*vaccin'
+    - 'covid\s*vaccin'
+    - 'vaccination\s*status'
+    - 'вакцинац.*covid'
+    - 'прививк.*ковид'
+    - 'статус\s*вакцинац'
+  profile_key: health.covid_vaccination
+
+smoking:
+  keywords:
+    - "fumator"
+    - "fumat"
+    - "fumati"
+    - "smoking"
+    - "smoker"
+    - "do you smoke"
+    - "курение"
+    - "курите"
+    - "курящий"
+  patterns:
+    - 'fum(at|[aă]tor|a[tț]i)'
+    - 'smok(ing|er|e)'
+    - 'do\s*you\s*smoke'
+    - 'курени|курит|курящ'
+  profile_key: health.smoking
+
+swimming:
+  keywords:
+    - "inot"
+    - "stiti sa inotati"
+    - "can you swim"
+    - "swimming ability"
+    - "swimming"
+    - "плавание"
+    - "умеете плавать"
+  patterns:
+    - '[iî]not'
+    - '[sș]ti[tț]i\s*s[aă]\s*[iî]nota[tț]i'
+    - '(can\s*you\s*)?swim'
+    - 'swimming\s*(abilit|capabilit)'
+    - 'плаван'
+    - 'умеете\s*плавать'
+  profile_key: health.swimming
+
+tb_certificate:
+  keywords:
+    - "test tb"
+    - "certificat tb"
+    - "tuberculoza"
+    - "tb test"
+    - "tuberculosis test"
+    - "tb certificate"
+    - "тест на туберкулез"
+    - "сертификат тб"
+    - "флюорография"
+  patterns:
+    - '(test|certificat)\s*tb'
+    - 'tuberculoz'
+    - 'tb\s*(test|certificate|result)'
+    - 'tuberculosis'
+    - '(тест|сертификат)\s*(на\s*)?туберкулез'
+    - 'тб\s*(тест|сертификат)'
+    - 'флюорограф'
+  profile_key: documents.tb_certificate
+
+# ------------------------------------------------------------------------------
+# 12. ADDITIONAL DOCUMENTS & IMMIGRATION
+# ------------------------------------------------------------------------------
+brp_number:
+  keywords:
+    - "numar brp"
+    - "brp number"
+    - "biometric residence permit"
+    - "номер brp"
+    - "биометрический вид на жительство"
+  patterns:
+    - 'brp(\s*number)?'
+    - 'biometric\s*residence\s*permit'
+    - 'номер\s*brp'
+    - 'биометрическ.*вид\s*на\s*жительств'
+  profile_key: documents.brp_number
+
+nino:
+  keywords:
+    - "numar de asigurare nationala"
+    - "national insurance number"
+    - "nino"
+    - "ni number"
+    - "номер национального страхования"
+    - "страховой номер"
+  patterns:
+    - 'national\s*insurance\s*(number|no)'
+    - 'nino'
+    - 'ni\s*number'
+    - 'asigurare\s*na[tț]ional[aă]'
+    - 'национальн.*страхован'
+    - 'страховой\s*номер'
+  profile_key: documents.nino
+
+cos_reference:
+  keywords:
+    - "numar cos"
+    - "referinta cos"
+    - "certificate of sponsorship"
+    - "cos reference"
+    - "cos number"
+    - "сертификат спонсорства"
+    - "номер cos"
+  patterns:
+    - 'certificate\s*of\s*sponsorship'
+    - 'cos\s*(reference|number|no)'
+    - 'certificat\s*de\s*sponsorizare'
+    - 'сертификат\s*спонсорств'
+    - 'номер\s*cos'
+  profile_key: documents.cos_reference
+
+share_code:
+  keywords:
+    - "share code"
+    - "cod de partajare"
+    - "right to work share code"
+    - "share code drept de munca"
+    - "код доступа"
+    - "шэр код"
+  patterns:
+    - 'share\s*code'
+    - 'cod\s*de\s*partajare'
+    - 'right\s*to\s*work.*code'
+    - 'drept\s*de\s*munc[aă].*cod'
+    - '(код\s*доступа|шэр\s*код)'
+  profile_key: documents.share_code
+
+travel_history:
+  keywords:
+    - "istoric calatorii"
+    - "tari vizitate"
+    - "travel history"
+    - "countries visited"
+    - "countries travelled to"
+    - "история поездок"
+    - "посещенные страны"
+    - "страны за последние 10 лет"
+  patterns:
+    - 'istoric.*c[aă]l[aă]tori'
+    - '[tț][aă]ri\s*vizitat'
+    - 'travel\s*history'
+    - 'countries?\s*(visited|travelled)'
+    - 'истори.*поездок'
+    - 'посещенн.*стран'
+    - 'страны.*последни'
+  profile_key: work.travel_history
+
+age_confirmation:
+  keywords:
+    - "confirmati varsta"
+    - "aveti peste 18 ani"
+    - "sunteti major"
+    - "confirm you are over 18"
+    - "are you over 18"
+    - "age confirmation"
+    - "подтвердите возраст"
+    - "вам есть 18 лет"
+    - "вам исполнилось 18"
+  patterns:
+    - 'confirma[tț]i.*v[aâ]rst'
+    - 'ave[tț]i\s*peste\s*18'
+    - 'sunte[tț]i\s*major'
+    - '(confirm|are)\s*you.*over\s*18'
+    - 'age\s*confirm'
+    - 'over\s*18'
+    - 'at\s*least\s*18'
+    - 'подтвердите\s*возраст'
+    - '(вам\s*)?есть\s*18'
+    - 'исполнилось\s*18'
+    - 'старше\s*18'
+  profile_key: personal.age_confirmation
+
+# ------------------------------------------------------------------------------
+# 13. CERTIFICATIONS & TRAINING
+# ------------------------------------------------------------------------------
+tractor_license:
+  keywords:
+    - "permis tractor"
+    - "licenta tractor"
+    - "tractor driving license"
+    - "tractor licence"
+    - "tractor driving"
+    - "права на трактор"
+    - "тракторные права"
+    - "удостоверение тракториста"
+  patterns:
+    - 'permis.*tractor'
+    - 'tractor\s*(driving\s*)?(licen[cs]e|permit)'
+    - 'права.*трактор'
+    - 'тракторн.*прав'
+    - 'удостоверен.*тракторист'
+  profile_key: work.tractor_license
+
+forklift_cert:
+  keywords:
+    - "certificat stivuitor"
+    - "permis stivuitor"
+    - "forklift certification"
+    - "forklift license"
+    - "counterbalance"
+    - "reach truck"
+    - "сертификат на погрузчик"
+    - "права на погрузчик"
+    - "удостоверение водителя погрузчика"
+  patterns:
+    - '(certificat|permis).*stivuitor'
+    - 'forklift\s*(certif|licen|operat)'
+    - '(counterbalance|reach)\s*(truck|forklift)'
+    - '(сертификат|права|удостоверен).*погрузчик'
+  profile_key: work.forklift_cert
+
+first_aid_cert:
+  keywords:
+    - "certificat prim ajutor"
+    - "curs prim ajutor"
+    - "first aid certificate"
+    - "first aid training"
+    - "first aid"
+    - "сертификат первой помощи"
+    - "курс первой помощи"
+    - "оказание первой помощи"
+  patterns:
+    - '(certificat|curs).*prim\s*ajutor'
+    - 'first\s*aid\s*(certif|train|course)?'
+    - '(сертификат|курс).*перв.*помощ'
+    - 'оказание\s*перв.*помощ'
+  profile_key: work.first_aid_cert
+
+food_hygiene_cert:
+  keywords:
+    - "certificat igiena alimentara"
+    - "igiena alimentara"
+    - "food hygiene certificate"
+    - "food safety training"
+    - "food hygiene"
+    - "сертификат пищевой гигиены"
+    - "гигиена питания"
+    - "санитарная книжка"
+  patterns:
+    - '(certificat)?.*igien[aă]\s*alimentar[aă]'
+    - 'food\s*(hygiene|safety)\s*(certif|train)?'
+    - '(сертификат)?.*пищев.*гигиен'
+    - 'санитарн.*книжк'
+    - 'гигиен.*питан'
+  profile_key: work.food_hygiene_cert
+
+heights_training:
+  keywords:
+    - "lucru la inaltime"
+    - "formare lucru la inaltime"
+    - "working at heights"
+    - "working at heights training"
+    - "heights training"
+    - "работа на высоте"
+    - "допуск к высотным работам"
+  patterns:
+    - 'lucru\s*la\s*[iî]n[aă]l[tț]ime'
+    - 'work(ing)?\s*at\s*height'
+    - 'height.*train'
+    - 'работ.*на\s*высот'
+    - 'допуск.*высотн'
+  profile_key: work.heights_training
+
+references:
+  keywords:
+    - "referinte"
+    - "recomandari"
+    - "scrisoare de recomandare"
+    - "references"
+    - "recommendation"
+    - "recommendation letter"
+    - "previous employer reference"
+    - "рекомендации"
+    - "рекомендательное письмо"
+    - "отзыв работодателя"
+  patterns:
+    - 'referin[tț]'
+    - 'recomandar'
+    - 'scrisoare\s*de\s*recomandar'
+    - 'reference'
+    - 'recommendation\s*(letter)?'
+    - 'employer\s*reference'
+    - 'рекомендац'
+    - 'рекомендательн.*письм'
+    - 'отзыв.*работодател'
+  profile_key: work.references
+
+languages_spoken:
+  keywords:
+    - "limbi vorbite"
+    - "limbi straine"
+    - "ce limbi vorbiti"
+    - "languages spoken"
+    - "languages you speak"
+    - "language skills"
+    - "language proficiency"
+    - "владение языками"
+    - "какими языками владеете"
+    - "знание языков"
+    - "иностранные языки"
+  patterns:
+    - 'limbi\s*(vorbite|str[aă]ine|cunoscute)'
+    - 'ce\s*limbi\s*vorbi[tț]i'
+    - 'language(s)?\s*(spoken|skill|proficien|you\s*speak)'
+    - 'владени.*язык'
+    - 'каки.*язык.*владе'
+    - 'знание\s*язык'
+    - 'иностранн.*язык'
+  profile_key: personal.languages_spoken
+
+# ------------------------------------------------------------------------------
+# 14. LOGISTICS & PREFERENCES
+# ------------------------------------------------------------------------------
+previous_uk_employer:
+  keywords:
+    - "angajator anterior uk"
+    - "angajator precedent marea britanie"
+    - "previous uk employer"
+    - "former uk employer"
+    - "previous employer in uk"
+    - "предыдущий работодатель в великобритании"
+    - "прошлый работодатель в uk"
+  patterns:
+    - 'angajator\s*(anterior|precedent).*uk'
+    - 'previous\s*(uk\s*)?employer'
+    - 'former\s*(uk\s*)?employer'
+    - 'employer.*in\s*(the\s*)?uk'
+    - 'предыдущ.*работодател.*((в|из)\s*)?(uk|великобритан|англи)'
+    - 'прошл.*работодател.*(uk|великобритан)'
+  profile_key: work.previous_uk_employer
+
+previous_sws_operator:
+  keywords:
+    - "operator sws anterior"
+    - "operator scheme precedent"
+    - "previous sws operator"
+    - "previous scheme operator"
+    - "which operator did you work with"
+    - "предыдущий оператор sws"
+    - "с каким оператором работали"
+  patterns:
+    - 'operator\s*(sws|scheme)\s*(anterior|precedent)'
+    - 'previous\s*(sws\s*)?operator'
+    - 'which\s*(operator|scheme|sponsor)'
+    - 'предыдущ.*оператор'
+    - 'каки.*оператор.*работал'
+  profile_key: work.previous_sws_operator
+
+preferred_airport:
+  keywords:
+    - "aeroport preferat"
+    - "aeroport de plecare"
+    - "preferred airport"
+    - "departure airport"
+    - "airport of departure"
+    - "предпочитаемый аэропорт"
+    - "аэропорт вылета"
+  patterns:
+    - 'aeroport\s*(preferat|de\s*plecare)'
+    - '(preferred|departure)\s*airport'
+    - 'airport\s*of\s*departure'
+    - '(предпочитаем|ближайш).*аэропорт'
+    - 'аэропорт\s*вылета'
+  profile_key: logistics.preferred_airport
+
+accommodation_pref:
+  keywords:
+    - "preferinte cazare"
+    - "tip cazare"
+    - "cazare preferata"
+    - "accommodation preferences"
+    - "accommodation type"
+    - "single sex caravan"
+    - "предпочтения по жилью"
+    - "тип проживания"
+    - "предпочтения по проживанию"
+  patterns:
+    - 'preferin[tț]e.*cazare'
+    - 'tip\s*cazare'
+    - 'cazare\s*preferat'
+    - 'accommodation\s*(prefer|type|requirement)'
+    - 'single\s*sex\s*caravan'
+    - 'предпочтен.*(жиль|проживан)'
+    - 'тип\s*проживан'
+  profile_key: logistics.accommodation_pref
+
+bank_details:
+  keywords:
+    - "detalii bancare"
+    - "cont bancar"
+    - "iban"
+    - "swift"
+    - "bank details"
+    - "bank account"
+    - "account number"
+    - "банковские реквизиты"
+    - "банковский счет"
+    - "номер счета"
+  patterns:
+    - 'detalii\s*bancar'
+    - 'cont\s*bancar'
+    - 'bank\s*(detail|account)'
+    - 'account\s*(number|name)'
+    - 'iban|swift|bic'
+    - 'банковск.*(реквизит|счет|данн)'
+    - 'номер\s*счет'
+  profile_key: logistics.bank_iban
+
+salary_expectations:
+  keywords:
+    - "asteptari salariale"
+    - "salariu dorit"
+    - "salary expectations"
+    - "expected salary"
+    - "desired wage"
+    - "зарплатные ожидания"
+    - "ожидаемая зарплата"
+    - "желаемая зарплата"
+  patterns:
+    - 'a[sș]tept[aă]ri\s*salarial'
+    - 'salariu\s*dorit'
+    - '(salary|wage)\s*(expectation|expected|desired)'
+    - 'зарплатн.*ожидан'
+    - '(ожидаем|желаем).*зарплат'
+  profile_key: work.salary_expectations
+
+weekend_availability:
+  keywords:
+    - "disponibilitate weekend"
+    - "lucru in weekend"
+    - "ture de noapte"
+    - "weekend availability"
+    - "can you work weekends"
+    - "shift work"
+    - "night shifts"
+    - "готовность работать в выходные"
+    - "работа в выходные"
+    - "ночные смены"
+  patterns:
+    - 'disponibilitate.*weekend'
+    - 'lucru.*weekend'
+    - 'tur[eă].*noapte'
+    - '(weekend|saturday|sunday)\s*(availabilit|work)'
+    - 'can\s*you\s*work\s*weekend'
+    - '(shift|night)\s*work'
+    - 'готовность.*выходн'
+    - 'работ.*выходн'
+    - 'ночн.*смен'
+  profile_key: work.weekend_availability
+
+applying_with:
+  keywords:
+    - "aplicati cu cineva"
+    - "aplicati impreuna"
+    - "cu cine aplicati"
+    - "applying with family"
+    - "applying with friends"
+    - "travelling with anyone"
+    - "state their names"
+    - "подаете заявку с кем-то"
+    - "подаете совместно"
+    - "с кем подаете заявку"
+  patterns:
+    - 'aplica[tț]i\s*(cu|[iî]mpreun[aă])'
+    - 'cu\s*cine\s*aplica'
+    - 'applying\s*with\s*(family|friend|partner|someone)'
+    - 'travelling\s*with'
+    - 'state\s*their\s*name'
+    - 'подаете.*(с\s*кем|совместно|вместе)'
+    - 'с\s*кем\s*подаете'
+  profile_key: work.applying_with
+
+# ------------------------------------------------------------------------------
+# 15. DECLARATIONS & COMPLIANCE
+# ------------------------------------------------------------------------------
+return_commitment:
+  keywords:
+    - "confirmati intoarcerea"
+    - "va intoarceti in tara"
+    - "confirm return"
+    - "return to home country"
+    - "return date commitment"
+    - "подтвердите возвращение"
+    - "обязуетесь вернуться"
+  patterns:
+    - 'confirma[tț]i.*[iî]ntoarcer'
+    - 'v[aă]\s*[iî]ntoarce[tț]i'
+    - 'confirm.*return'
+    - 'return\s*to\s*(home|your)\s*country'
+    - 'return.*before.*expir'
+    - 'подтвердите.*возвращен'
+    - 'обязуетесь.*вернуть'
+    - 'вернетесь.*до\s*истечен'
+  profile_key: logistics.return_commitment
+
+no_recruitment_fees:
+  keywords:
+    - "nu ati platit taxe de recrutare"
+    - "taxe ilegale"
+    - "comisioane de angajare"
+    - "no recruitment fees"
+    - "no illegal fees"
+    - "did you pay any fees"
+    - "не платили за трудоустройство"
+    - "не оплачивали сборы"
+    - "незаконные платежи"
+  patterns:
+    - 'nu\s*a[tț]i\s*pl[aă]tit.*tax'
+    - 'taxe\s*(ilegale|de\s*recrutare)'
+    - 'comisioane\s*de\s*angajare'
+    - '(no|any)\s*(illegal\s*)?(recruitment|agency)\s*fee'
+    - 'did\s*you\s*pay.*fee'
+    - 'не\s*платили.*(трудоустройств|сбор)'
+    - 'незаконн.*платеж'
+  profile_key: work.caravan_acceptance
+
+uk_labour_laws:
+  keywords:
+    - "cunoasteti legislatia muncii uk"
+    - "drepturile lucratorilor"
+    - "uk labour laws"
+    - "uk employment rights"
+    - "worker rights"
+    - "знаете трудовое законодательство"
+    - "права работников"
+    - "трудовое право великобритании"
+  patterns:
+    - 'cuno[aă][sș]te[tț]i.*legisla[tț]i.*munc'
+    - 'drepturile\s*lucr[aă]tor'
+    - '(uk|british)\s*(labour|employment)\s*(law|right|regulation)'
+    - 'worker\s*(right|protection)'
+    - 'знаете.*трудов.*законодательств'
+    - 'права\s*работник'
+    - 'трудов.*прав.*(uk|великобритан)'
+  profile_key: work.caravan_acceptance
+
+photo_upload:
+  keywords:
+    - "incarcati o fotografie"
+    - "fotografie recenta"
+    - "foto"
+    - "upload a photo"
+    - "upload a selfie"
+    - "recent photo"
+    - "id badge photo"
+    - "загрузите фото"
+    - "фотография"
+    - "фото для бейджа"
+  patterns:
+    - '[iî]nc[aă]rca[tț]i\s*(o\s*)?fotografie'
+    - 'fotografie\s*(recent[aă]|actual[aă])'
+    - 'upload\s*(a\s*)?(photo|selfie|picture|image)'
+    - 'recent\s*photo'
+    - 'id\s*badge\s*photo'
+    - 'загрузите\s*фото'
+    - 'фотографи'
+    - 'фото\s*для\s*бейдж'
+  profile_key: ""
+
+signature:
+  keywords:
+    - "semnatura"
+    - "semnatura digitala"
+    - "signature"
+    - "digital signature"
+    - "подпись"
+    - "цифровая подпись"
+    - "электронная подпись"
+  patterns:
+    - 'semn[aă]tur'
+    - 'signatur'
+    - 'digital\s*signatur'
+    - 'подпись'
+    - '(цифров|электронн).*подпись'
+  profile_key: ""
+
