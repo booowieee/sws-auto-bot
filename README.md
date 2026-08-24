@@ -91,11 +91,13 @@ sws-auto-bot/
 │   ├── analyzer.py              # Парсинг DOM структуры Google Forms
 │   ├── matcher.py               # Сопоставление полей с профилем
 │   ├── filler.py                # Заполнение полей и отправка
+│   ├── watcher.py               # Фоновый мониторинг и автозапуск
 │   ├── batch_runner.py          # Пакетный прогон и QA-бенчмарки
 │   └── reporter.py              # Логирование, скриншоты, Telegram
 ├── tests/
 │   ├── test_config.py
 │   ├── test_matcher.py
+│   ├── test_watcher.py
 │   └── test_batch_runner.py
 ├── data/                        # Persistent профиль Chromium (в .gitignore)
 ├── logs/                        # JSON-логи выполнения
@@ -170,7 +172,22 @@ python -m src.__main__ --url "https://docs.google.com/forms/d/e/.../viewform"
 
 Для визуальной отладки добавьте флаг `--headed`.
 
-### 4. Пакетное тестирование (Batch Runner)
+### 4. Режим автопилота / слежения (--watch)
+
+Опрашивает закрытую форму через легковесные HTTP-запросы (без расхода ресурсов браузера). Как только форма открывается, бот мгновенно запускает Playwright, заполняет все поля, отправляет форму и присылает отчет со скриншотами в Telegram:
+
+```bash
+# Слежение с интервалом проверки 30 секунд (по умолчанию)
+python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform"
+
+# Слежение с интервалом 10 секунд в тестовом режиме (без нажатия Submit)
+python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 10 --test
+
+# Настройка максимального времени ожидания (в часах)
+python -m src.__main__ --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 15 --max-hours 48
+```
+
+### 5. Пакетное тестирование (Batch Runner)
 
 Прогон по списку форм из файла:
 
@@ -189,13 +206,16 @@ python -m src.__main__ --batch forms.csv --test
 ## Развертывание в Docker
 
 ```bash
+# Слежение за формой в фоне (автопилот)
+docker compose run -d --rm sws-auto-bot --watch "https://docs.google.com/forms/d/e/.../viewform" --interval 20
+
 # Тестовый прогон одной формы
 docker compose run --rm sws-auto-bot --url "https://docs.google.com/forms/d/e/.../viewform" --test
 
 # Пакетный прогон
 docker compose run --rm sws-auto-bot --batch config/test_urls.example.txt --test
 
-# Боевой запуск
+# Боевой запуск по прямому URL
 docker compose run --rm sws-auto-bot --url "https://docs.google.com/forms/d/e/.../viewform"
 ```
 

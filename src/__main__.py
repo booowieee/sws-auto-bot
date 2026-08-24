@@ -206,6 +206,9 @@ from src.batch_runner import BatchRunner
 @click.command()
 @click.option("--url", "-u", type=str, help="Target Google Form URL to fill and submit.")
 @click.option("--batch", "-b", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to text/CSV file with Google Form URLs for mass testing.")
+@click.option("--watch", "-w", type=str, help="Watch a Google Form URL and auto-fill when it opens.")
+@click.option("--interval", type=int, default=30, show_default=True, help="Polling interval in seconds for --watch mode.")
+@click.option("--max-hours", type=float, default=72, show_default=True, help="Max hours to watch before timeout.")
 @click.option("--test", is_flag=True, help="Test mode: fills form, captures screenshots, but does not submit.")
 @click.option("--login", is_flag=True, help="One-time manual Google authentication in headed browser.")
 @click.option("--check-session", is_flag=True, help="Checks whether persistent Google session is active.")
@@ -213,6 +216,9 @@ from src.batch_runner import BatchRunner
 def main(
     url: Optional[str],
     batch: Optional[Path],
+    watch: Optional[str],
+    interval: int,
+    max_hours: float,
     test: bool,
     login: bool,
     check_session: bool,
@@ -229,6 +235,18 @@ def main(
 
     headless_mode = False if headed else None
 
+    if watch:
+        from src.watcher import FormWatcher
+        watcher = FormWatcher(
+            url=watch,
+            poll_interval=interval,
+            max_hours=max_hours,
+            is_test=test,
+            headless=headless_mode,
+        )
+        exit_code = asyncio.run(watcher.watch())
+        sys.exit(exit_code)
+
     if batch:
         items = BatchRunner.load_urls_from_file(batch)
         if not items:
@@ -241,7 +259,7 @@ def main(
         sys.exit(exit_code)
 
     if not url:
-        click.echo("Error: Please provide a Google Form URL using --url, a batch file with --batch, or choose --login / --check-session")
+        click.echo("Error: Please provide a Google Form URL using --url, a batch file with --batch, --watch for autopilot mode, or --login / --check-session")
         sys.exit(1)
 
     exit_code = asyncio.run(run_autofill(url=url, is_test=test, headless=headless_mode))

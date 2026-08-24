@@ -761,6 +761,42 @@ criminal_record:
     - 'уголовн.*ответственност'
   profile_key: work.criminal_record
 
+tractor_license:
+  keywords:
+    - "permis tractor"
+    - "licenta tractor"
+    - "tractor driving license"
+    - "tractor licence"
+    - "tractor driving"
+    - "права на трактор"
+    - "тракторные права"
+    - "удостоверение тракториста"
+  patterns:
+    - 'permis.*tractor'
+    - 'tractor\s*(driving\s*)?(licen[cs]e|permit)'
+    - 'права.*трактор'
+    - 'тракторн.*прав'
+    - 'удостоверен.*тракторист'
+  profile_key: work.tractor_license
+
+forklift_cert:
+  keywords:
+    - "certificat stivuitor"
+    - "permis stivuitor"
+    - "forklift certification"
+    - "forklift license"
+    - "counterbalance"
+    - "reach truck"
+    - "сертификат на погрузчик"
+    - "права на погрузчик"
+    - "удостоверение водителя погрузчика"
+  patterns:
+    - '(certificat|permis).*stivuitor'
+    - 'forklift\s*(certif|licen|operat)'
+    - '(counterbalance|reach)\s*(truck|forklift)'
+    - '(сертификат|права|удостоверен).*погрузчик'
+  profile_key: work.forklift_cert
+
 driving_license:
   keywords:
     - "permis de conducere"
@@ -1521,42 +1557,6 @@ age_confirmation:
 # ------------------------------------------------------------------------------
 # 13. CERTIFICATIONS & TRAINING
 # ------------------------------------------------------------------------------
-tractor_license:
-  keywords:
-    - "permis tractor"
-    - "licenta tractor"
-    - "tractor driving license"
-    - "tractor licence"
-    - "tractor driving"
-    - "права на трактор"
-    - "тракторные права"
-    - "удостоверение тракториста"
-  patterns:
-    - 'permis.*tractor'
-    - 'tractor\s*(driving\s*)?(licen[cs]e|permit)'
-    - 'права.*трактор'
-    - 'тракторн.*прав'
-    - 'удостоверен.*тракторист'
-  profile_key: work.tractor_license
-
-forklift_cert:
-  keywords:
-    - "certificat stivuitor"
-    - "permis stivuitor"
-    - "forklift certification"
-    - "forklift license"
-    - "counterbalance"
-    - "reach truck"
-    - "сертификат на погрузчик"
-    - "права на погрузчик"
-    - "удостоверение водителя погрузчика"
-  patterns:
-    - '(certificat|permis).*stivuitor'
-    - 'forklift\s*(certif|licen|operat)'
-    - '(counterbalance|reach)\s*(truck|forklift)'
-    - '(сертификат|права|удостоверен).*погрузчик'
-  profile_key: work.forklift_cert
-
 first_aid_cert:
   keywords:
     - "certificat prim ajutor"

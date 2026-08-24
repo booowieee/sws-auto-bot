@@ -182,3 +182,26 @@ def test_match_english_russian_choice_options(matcher):
 
     f_ru_gdpr = FormField(index=1, label="Согласие на обработку персональных данных:", field_type=FieldType.RADIO, options=["Да, согласен", "Нет"], required=True)
     assert matcher.match_field(f_ru_gdpr).selected_option == "Да, согласен"
+
+
+def test_match_extended_fields(matcher):
+    cases = [
+        ("Mărimea încălțămintei de protecție (Safety shoe size)", "shoe_size", matcher.profile.ppe.shoe_size),
+        ("Shoe size (EU/UK)", "shoe_size", matcher.profile.ppe.shoe_size),
+        ("Размер спецобуви / ботинок", "shoe_size", matcher.profile.ppe.shoe_size),
+        ("Aveți alergii cunoscute? (Allergies)", "allergies", matcher.profile.health.allergies),
+        ("Any known food or medication allergies?", "allergies", matcher.profile.health.allergies),
+        ("Наличие аллергии на укусы насекомых или препараты", "allergies", matcher.profile.health.allergies),
+        ("Dețineți permis de conducere tractor?", "tractor_license", matcher.profile.work.tractor_license),
+        ("Do you hold a valid tractor driving license?", "tractor_license", matcher.profile.work.tractor_license),
+        ("Удостоверение тракториста-машиниста", "tractor_license", matcher.profile.work.tractor_license),
+        ("Aeroportul preferat de plecare", "preferred_airport", matcher.profile.logistics.preferred_airport),
+        ("Preferred airport of departure", "preferred_airport", matcher.profile.logistics.preferred_airport),
+        ("Предпочитаемый аэропорт вылета", "preferred_airport", matcher.profile.logistics.preferred_airport),
+    ]
+    for label, expected_key, expected_val in cases:
+        field = FormField(index=1, label=label, field_type=FieldType.TEXT, required=True)
+        match = matcher.match_field(field)
+        assert match.matched_key == expected_key, f"Failed on label: {label}"
+        assert match.resolved_value == expected_val
+
