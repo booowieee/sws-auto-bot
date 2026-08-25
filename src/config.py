@@ -59,7 +59,7 @@ class Config:
     LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "4.0"))
 
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "") or LLM_API_KEY
-    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")

@@ -8,7 +8,7 @@ from playwright.async_api import Page, Locator
 from src.analyzer import FormAnalyzer
 from src.llm_router import LLMRouter
 from src.logger import logger
-from src.matcher import FieldMatcher
+from src.matcher import FieldMatcher, SEMANTIC_OPTION_MAP
 from src.models import (
     FieldMatch,
     FieldType,
@@ -164,17 +164,34 @@ class FormFiller:
 
         if field.label:
             clean_target = re.sub(r"[\*\n\r\t]+", " ", field.label).strip().lower()
-            # 1. Search containers for matching heading
+            clean_target_nd = strip_diacritics(clean_target)
+
+            # Pass 1: Exact match on heading label (avoids "пол" matching "полное имя")
             for i in range(count):
                 c = containers.nth(i)
                 heading = c.locator('[role="heading"], .M7eMe').first
                 if await heading.count() > 0:
                     htext = (await heading.inner_text()).strip().lower()
                     htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
-                    if clean_target == htext_clean or clean_target in htext_clean or (len(clean_target) >= 4 and htext_clean in clean_target):
+                    htext_clean_nd = strip_diacritics(htext_clean)
+                    if clean_target == htext_clean or clean_target_nd == htext_clean_nd:
                         return c
 
-        # 2. Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
+            # Pass 2: Word boundary regex match
+            for i in range(count):
+                c = containers.nth(i)
+                heading = c.locator('[role="heading"], .M7eMe').first
+                if await heading.count() > 0:
+                    htext = (await heading.inner_text()).strip().lower()
+                    htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
+                    htext_clean_nd = strip_diacritics(htext_clean)
+                    try:
+                        if re.search(r'\b' + re.escape(clean_target_nd) + r'\b', htext_clean_nd):
+                            return c
+                    except Exception:
+                        pass
+
+        # Pass 3: Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
         if 0 < field.index <= count:
             return containers.nth(field.index - 1)
 
@@ -231,8 +248,25 @@ class FormFiller:
         target_clean = option_text.strip().lower()
         target_nd = strip_diacritics(target_clean)
 
+        # Collect candidate synonym phrases for the option (RO / EN / RU)
+        candidate_syns = [target_clean, target_nd]
+        for syn_group in SEMANTIC_OPTION_MAP.values():
+            syn_group_clean = [s.lower().strip() for s in syn_group]
+            if target_clean in syn_group_clean or target_nd in syn_group_clean:
+                candidate_syns.extend(syn_group_clean)
+                candidate_syns.extend([strip_diacritics(s) for s in syn_group_clean])
+        candidate_syns = list(set(candidate_syns))
+
         radios = container.locator('[role="radio"]')
         count = await radios.count()
+
+        # If primary container has no radios, try index-based container fallback
+        if count == 0 and 0 < field.index:
+            containers = self.page.locator('[role="listitem"]')
+            if await containers.count() >= field.index:
+                container = containers.nth(field.index - 1)
+                radios = container.locator('[role="radio"]')
+                count = await radios.count()
 
         for i in range(count):
             radio = radios.nth(i)
@@ -248,13 +282,21 @@ class FormFiller:
             inner_txt_nd = strip_diacritics(inner_txt)
             parent_txt_nd = strip_diacritics(parent_txt)
 
-            if (
-                target_clean in (data_val, aria_label, inner_txt)
-                or target_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
-                or target_clean in parent_txt
-                or target_nd in parent_txt_nd
-                or (len(target_clean) >= 3 and (target_clean in data_val or data_val in target_clean or target_nd in data_val_nd or data_val_nd in target_nd))
-            ):
+            # Match against target and all semantic candidates
+            is_matched = False
+            for cand in candidate_syns:
+                cand_nd = strip_diacritics(cand)
+                if (
+                    cand in (data_val, aria_label, inner_txt)
+                    or cand_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
+                    or cand in parent_txt
+                    or cand_nd in parent_txt_nd
+                    or (len(cand) >= 3 and (cand in data_val or data_val in cand or cand_nd in data_val_nd or data_val_nd in cand_nd))
+                ):
+                    is_matched = True
+                    break
+
+            if is_matched:
                 await radio.scroll_into_view_if_needed()
                 try:
                     await radio.click(force=True, timeout=2000)
@@ -270,11 +312,15 @@ class FormFiller:
                 return
 
         # 2. Fallback: text search inside container
-        opt_label = container.get_by_text(option_text, exact=False).first
-        if await opt_label.count() > 0:
-            await opt_label.scroll_into_view_if_needed()
-            await opt_label.click(force=True, timeout=2000)
-            return
+        for cand in candidate_syns:
+            opt_label = container.get_by_text(cand, exact=False).first
+            if await opt_label.count() > 0:
+                await opt_label.scroll_into_view_if_needed()
+                try:
+                    await opt_label.click(force=True, timeout=2000)
+                    return
+                except Exception:
+                    pass
 
         logger.warning(f"Could not locate radio option '{option_text}' in field '{field.label}'")
 

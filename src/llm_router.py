@@ -54,7 +54,7 @@ class LLMRouter:
                     name="Groq",
                     base_url="https://api.groq.com/openai/v1",
                     api_key=groq_key,
-                    model=Config.GROQ_MODEL or "llama-3.3-70b-versatile",
+                    model=Config.GROQ_MODEL or "llama-3.1-8b-instant",
                     timeout_seconds=3.5,
                 )
             )

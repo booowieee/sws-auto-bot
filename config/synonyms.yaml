@@ -556,11 +556,14 @@ nationality:
     - nationalitate
     - "tara de origine"
     - "ваше гражданство"
+    - "национальность"
+    - "ваша национальность"
   patterns:
     - 'cet[aă][tț]en(ie|ia)?'
     - 'nationality'
     - 'citizenship'
     - 'гражданств'
+    - 'национальност'
   profile_key: personal.nationality
 
 address_street:
