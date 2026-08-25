@@ -31,7 +31,7 @@ Watcher-бот: форма OPEN --> Auto-Bot запускается
 
 ### Ручной запуск (основной)
 ```bash
-python -m sws_auto_bot --url "https://forms.gle/example123"
+python -m src.__main__ --url "https://forms.gle/example123"
 ```
 
 ### Автозапуск от Watcher-бота (планируется)
@@ -39,13 +39,13 @@ Watcher-бот при обнаружении статуса `OPEN` запуск�
 
 ### Тестовый прогон (без отправки)
 ```bash
-python -m sws_auto_bot --url "https://forms.gle/example123" --test
+python -m src.__main__ --url "https://forms.gle/example123" --test
 ```
 Заполняет форму, делает скриншот, но НЕ нажимает Submit. Нужен для отладки на чужих формах.
 
 ### Первичная авторизация Google
 ```bash
-python -m sws_auto_bot --login
+python -m src.__main__ --login
 ```
 Открывает браузер, пользователь логинится в Google со своего аккаунта,
 профиль сохраняется в `data/chrome_profile/`. Делается один раз.
@@ -309,7 +309,7 @@ Playwright поддерживает persistent browser context -- сохране
 со всеми куками и авторизацией.
 
 Настройка (один раз):
-1. `python -m sws_auto_bot --login`
+1. `python -m src.__main__ --login`
 2. Открывается обычный Chromium с UI.
 3. Пользователь заходит в accounts.google.com под своим аккаунтом.
 4. Закрывает браузер.
@@ -554,6 +554,6 @@ DNS может не резолвиться, Playwright может зависну
 | 9 | reporter.py -- скриншоты, JSON-лог, Telegram | 1 |
 | 10 | __main__.py -- CLI (--url, --test, --login, --check-session) | 1 |
 | 11 | Тестирование на 5+ разных Google Forms | 1 |
-| 12 | llm_fallback.py -- Gemini API для нераспознанных полей | 2 |
+| 12 | llm.py + llm_router.py -- LLM Fallback Router для нераспознанных полей | 2 |
 | 13 | Интеграция с Watcher-ботом (автозапуск при OPEN) | 2 |
 | 14 | Загрузка файлов (file_upload) | 2 |

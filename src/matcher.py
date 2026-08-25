@@ -305,14 +305,16 @@ class FieldMatcher:
                 return f"{first} {last}".strip()
 
         # Fallback 4: First/Last name requested but empty -> split from full_name
+        # NOTE: Read raw attribute directly (not via _resolve_profile_value) to prevent
+        # infinite recursion when all name fields are empty (full_name -> first_name -> full_name).
         if profile_key == "personal.first_name" and not current:
-            full = self._resolve_profile_value("personal.full_name")
-            if full:
-                return str(full).split()[0]
+            full_raw = self.profile.personal.full_name
+            if full_raw:
+                return str(full_raw).split()[0]
         if profile_key == "personal.last_name" and not current:
-            full = self._resolve_profile_value("personal.full_name")
-            if full and len(str(full).split()) > 1:
-                return " ".join(str(full).split()[1:])
+            full_raw = self.profile.personal.full_name
+            if full_raw and len(str(full_raw).split()) > 1:
+                return " ".join(str(full_raw).split()[1:])
 
         if profile_key == "contacts.emergency_contact.email" and not current:
             return self._resolve_profile_value("contacts.email") or "user@example.com"

@@ -51,6 +51,25 @@ class FormWatcher:
         self.is_test = is_test
         self.headless = headless
         self._stop_event = asyncio.Event()
+        self._session: Optional[aiohttp.ClientSession] = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Returns a persistent aiohttp session, creating one if needed."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=20),
+                headers={
+                    "User-Agent": Config.USER_AGENT,
+                    "Accept-Language": "en-US,en;q=0.9,ro;q=0.8,ru;q=0.7",
+                },
+            )
+        return self._session
+
+    async def _close_session(self) -> None:
+        """Closes the persistent HTTP session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
 
     def _setup_signal_handlers(self):
         """Register OS signal handlers for graceful shutdown."""
@@ -85,93 +104,91 @@ class FormWatcher:
             f"<b>Mode:</b> {'Test (dry-run)' if self.is_test else 'LIVE (auto-submit)'}"
         )
 
-        while not self._stop_event.is_set():
-            elapsed = time.time() - start
-            if elapsed > self.max_duration:
-                logger.info("Max watch duration reached. Exiting.")
-                await self._notify("<b>[SWS Watcher]</b> Max watch duration reached. Stopping.")
-                return 1
+        try:
+            while not self._stop_event.is_set():
+                elapsed = time.time() - start
+                if elapsed > self.max_duration:
+                    logger.info("Max watch duration reached. Exiting.")
+                    await self._notify("<b>[SWS Watcher]</b> Max watch duration reached. Stopping.")
+                    return 1
 
-            check_count += 1
-            is_open = await self._check_form_open()
+                check_count += 1
+                is_open = await self._check_form_open()
 
-            hours_running = elapsed / 3600
-            if is_open:
-                logger.info(f"Form is OPEN after {check_count} checks ({hours_running:.1f}h). Launching autofill...")
-                await self._notify(
-                    f"<b>[SWS Watcher] FORM OPEN</b>\n\n"
-                    f"<b>URL:</b> <code>{self.url}</code>\n"
-                    f"<b>Checks:</b> {check_count}\n"
-                    f"<b>Waited:</b> {hours_running:.1f}h\n\n"
-                    f"Launching autofill..."
-                )
+                hours_running = elapsed / 3600
+                if is_open:
+                    logger.info(f"Form is OPEN after {check_count} checks ({hours_running:.1f}h). Launching autofill...")
+                    await self._notify(
+                        f"<b>[SWS Watcher] FORM OPEN</b>\n\n"
+                        f"<b>URL:</b> <code>{self.url}</code>\n"
+                        f"<b>Checks:</b> {check_count}\n"
+                        f"<b>Waited:</b> {hours_running:.1f}h\n\n"
+                        f"Launching autofill..."
+                    )
 
-                exit_code = await self._run_autofill()
+                    exit_code = await self._run_autofill()
 
-                status = "SUCCESS" if exit_code == 0 else "FAILED"
-                logger.info(f"Autofill completed: {status}")
-                return exit_code
+                    status = "SUCCESS" if exit_code == 0 else "FAILED"
+                    logger.info(f"Autofill completed: {status}")
+                    return exit_code
 
-            # Log progress every 100 checks (silent otherwise)
-            if check_count % 100 == 0:
-                logger.info(f"Still watching... ({check_count} checks, {hours_running:.1f}h elapsed)")
+                # Log progress every 100 checks (silent otherwise)
+                if check_count % 100 == 0:
+                    logger.info(f"Still watching... ({check_count} checks, {hours_running:.1f}h elapsed)")
 
-            # Interruptible sleep
-            try:
-                await asyncio.wait_for(self._stop_event.wait(), timeout=self.poll_interval)
-                break  # stop_event was set
-            except asyncio.TimeoutError:
-                pass  # Normal timeout, continue polling
+                # Interruptible sleep
+                try:
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=self.poll_interval)
+                    break  # stop_event was set
+                except asyncio.TimeoutError:
+                    pass  # Normal timeout, continue polling
 
-        logger.info("Watcher stopped.")
-        return 0
+            logger.info("Watcher stopped.")
+            return 0
+        finally:
+            await self._close_session()
 
     async def _check_form_open(self) -> bool:
         """Lightweight HTTP check for form status (no Playwright needed)."""
         try:
-            timeout = aiohttp.ClientTimeout(total=20)
-            headers = {
-                "User-Agent": Config.USER_AGENT,
-                "Accept-Language": "en-US,en;q=0.9,ro;q=0.8,ru;q=0.7",
-            }
+            session = await self._get_session()
 
-            async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
-                async with session.get(self.url, allow_redirects=True) as resp:
-                    if resp.status != 200:
-                        logger.debug(f"Form check HTTP {resp.status}")
+            async with session.get(self.url, allow_redirects=True) as resp:
+                if resp.status != 200:
+                    logger.debug(f"Form check HTTP {resp.status}")
+                    return False
+
+                html = await resp.text()
+                html_lower = html.lower()
+                html_nd = strip_diacritics(html_lower)
+                final_url = str(resp.url).lower()
+
+                # Closed: URL contains closedform
+                if "closedform" in final_url:
+                    logger.debug("Form closed (URL indicator)")
+                    return False
+
+                # Closed: known closure text markers
+                for marker in CLOSED_MARKERS:
+                    marker_nd = strip_diacritics(marker.lower())
+                    if marker in html_lower or marker_nd in html_nd:
+                        logger.debug(f"Form closed (text marker: '{marker}')")
                         return False
 
-                    html = await resp.text()
-                    html_lower = html.lower()
-                    html_nd = strip_diacritics(html_lower)
-                    final_url = str(resp.url).lower()
-
-                    # Closed: URL contains closedform
-                    if "closedform" in final_url:
-                        logger.debug("Form closed (URL indicator)")
-                        return False
-
-                    # Closed: known closure text markers
-                    for marker in CLOSED_MARKERS:
-                        marker_nd = strip_diacritics(marker.lower())
-                        if marker in html_lower or marker_nd in html_nd:
-                            logger.debug(f"Form closed (text marker: '{marker}')")
-                            return False
-
-                    # Open check 1: JavaScript Form Data Blob (FB_PUBLIC_LOAD_DATA_)
-                    if "FB_PUBLIC_LOAD_DATA_" in html:
-                        match = re.search(r"FB_PUBLIC_LOAD_DATA_\s*=\s*(\[.+?\]);\s*</script>", html, re.DOTALL)
-                        if match and len(match.group(1)) > 300:
-                            # Form payload with fields exists
-                            return True
-
-                    # Open check 2: active form elements found in DOM
-                    has_inputs = any(ind in html_lower for ind in OPEN_INDICATORS)
-                    if has_inputs:
+                # Open check 1: JavaScript Form Data Blob (FB_PUBLIC_LOAD_DATA_)
+                if "FB_PUBLIC_LOAD_DATA_" in html:
+                    match = re.search(r"FB_PUBLIC_LOAD_DATA_\s*=\s*(\[.+?\]);\s*</script>", html, re.DOTALL)
+                    if match and len(match.group(1)) > 300:
+                        # Form payload with fields exists
                         return True
 
-                    logger.debug("Form status undetermined or closed (no active input indicators found)")
-                    return False
+                # Open check 2: active form elements found in DOM
+                has_inputs = any(ind in html_lower for ind in OPEN_INDICATORS)
+                if has_inputs:
+                    return True
+
+                logger.debug("Form status undetermined or closed (no active input indicators found)")
+                return False
 
         except aiohttp.ClientError as e:
             logger.warning(f"Form check network error: {e}")
@@ -206,10 +223,10 @@ class FormWatcher:
         }
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(api_url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-                    if resp.status != 200:
-                        body = await resp.text()
-                        logger.error(f"Telegram watcher notification failed: {body}")
+            session = await self._get_session()
+            async with session.post(api_url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    logger.error(f"Telegram watcher notification failed: {body}")
         except Exception:
             logger.exception("Failed to send watcher Telegram notification")
