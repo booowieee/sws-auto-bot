@@ -60,6 +60,7 @@ class Config:
 
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "") or LLM_API_KEY
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
