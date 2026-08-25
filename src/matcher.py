@@ -256,6 +256,18 @@ class FieldMatcher:
             if full and len(str(full).split()) > 1:
                 return " ".join(str(full).split()[1:])
 
+        # Fallback 5: PPE & Health default values
+        if profile_key == "ppe.shoe_size" and not current:
+            return "42"
+        if profile_key == "ppe.glove_size" and not current:
+            return "M"
+        if profile_key == "ppe.tshirt_size" and not current:
+            return "L"
+        if profile_key == "ppe.trouser_size" and not current:
+            return "M"
+        if profile_key == "health.dietary_requirements" and not current:
+            return "Nu"
+
         return current
 
     @classmethod
@@ -266,7 +278,13 @@ class FieldMatcher:
         target_clean = target_val.lower().strip()
         target_nodiacritics = strip_diacritics(target_clean)
 
-        # Smart choice for contact method (email vs phone vs whatsapp)
+        # 1. Exact match (with and without diacritics) - Highest Priority
+        for opt in options:
+            opt_clean = opt.lower().strip()
+            if opt_clean == target_clean or strip_diacritics(opt_clean) == target_nodiacritics:
+                return opt
+
+        # 2. Smart choice for contact method (email vs phone vs whatsapp)
         if "@" in target_clean:
             for opt in options:
                 opt_nd = strip_diacritics(opt.lower().strip())
@@ -278,21 +296,24 @@ class FieldMatcher:
                 if any(s in opt_nd for s in ("telefon", "phone", "apel", "mobil", "sms")):
                     return opt
 
-        # Handle numeric scale options (e.g. 1 to 5)
-        if all(opt.isdigit() for opt in options):
+        # 3. Handle numeric scale options (e.g. 1 to 5, shoe sizes 40 to 45)
+        if all(opt.strip().isdigit() for opt in options):
+            if target_clean.isdigit():
+                target_num = int(target_clean)
+                best_opt = options[0]
+                min_diff = abs(int(best_opt.strip()) - target_num)
+                for opt in options[1:]:
+                    diff = abs(int(opt.strip()) - target_num)
+                    if diff < min_diff:
+                        min_diff = diff
+                        best_opt = opt
+                return best_opt
             if target_clean in ("incepator", "basic", "a1", "a2", "beginner", "slaba"):
                 return next((opt for opt in ("2", "3", "1") if opt in options), options[0])
             elif target_clean in ("da", "yes", "avansat", "fluent", "excelenta", "5", "4"):
                 return next((opt for opt in ("5", "4", "3") if opt in options), options[-1])
-            return options[-1]
 
-        # 1. Exact match (with and without diacritics)
-        for opt in options:
-            opt_clean = opt.lower().strip()
-            if opt_clean == target_clean or strip_diacritics(opt_clean) == target_nodiacritics:
-                return opt
-
-        # 2. Semantic synonym group match
+        # 4. Semantic synonym group match
         for key, syns in SEMANTIC_OPTION_MAP.items():
             key_clean = key.lower().strip()
             syns_clean = [s.lower().strip() for s in syns]

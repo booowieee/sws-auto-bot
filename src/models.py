@@ -112,9 +112,10 @@ class HealthInfo(BaseModel):
 
 
 class PPEInfo(BaseModel):
-    shoe_size: str = ""
-    tshirt_size: str = ""
-    trouser_size: str = ""
+    shoe_size: str = "42"
+    tshirt_size: str = "L"
+    trouser_size: str = "M"
+    glove_size: str = "M"
 
 
 class WorkInfo(BaseModel):

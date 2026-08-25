@@ -1301,6 +1301,11 @@ weight:
 
 shoe_size:
   keywords:
+    - "marimea pantofilor / bocancilor de lucru"
+    - "marimea pantofilor"
+    - "marimea bocancilor"
+    - "marime pantofi"
+    - "marime bocanci"
     - "marimea incaltamintei"
     - "marime incaltaminte"
     - "shoe size"
@@ -1309,13 +1314,31 @@ shoe_size:
     - "размер обуви"
     - "размер ботинок"
   patterns:
-    - 'm[aă]rime.*[iî]nc[aă]l[tț][aă]minte'
+    - 'm[aă]rime.*(pantof|bocanc|[iî]nc[aă]l[tț][aă]minte)'
+    - '(pantofi|bocanci)\s*(de\s*lucru)?'
     - '(shoe|boot|footwear)\s*size'
     - 'размер\s*(обуви|ботинок|сапог)'
   profile_key: ppe.shoe_size
 
+glove_size:
+  keywords:
+    - "marimea manusilor de protectie"
+    - "marimea manusilor"
+    - "marime manusi"
+    - "manusi de protectie"
+    - "glove size"
+    - "safety gloves size"
+    - "размер перчаток"
+  patterns:
+    - 'm[aă]rime.*m[aă]nu[sș]'
+    - 'm[aă]nu[sș]i(\s*de\s*protec[tț]ie)?'
+    - 'glove\s*size'
+    - 'размер\s*перчаток'
+  profile_key: ppe.glove_size
+
 tshirt_size:
   keywords:
+    - "marimea tricoului / bluzei de lucru"
     - "marimea tricoului"
     - "marime tricou"
     - "t-shirt size"
@@ -1323,14 +1346,15 @@ tshirt_size:
     - "размер футболки"
     - "размер одежды"
   patterns:
-    - 'm[aă]rime.*tricou'
+    - 'm[aă]rime.*(tricou|bluz)'
     - '(t-?\s*shirt|top)\s*size'
     - 'clothing\s*size'
-    - 'размер\s*(футболк|одежд|майк)'
+    - 'размер\s*(футболк|одежд|майк|кофт)'
   profile_key: ppe.tshirt_size
 
 trouser_size:
   keywords:
+    - "marimea pantalonilor de lucru"
     - "marimea pantalonilor"
     - "marime pantaloni"
     - "trouser size"
@@ -1419,6 +1443,8 @@ allergies:
 
 dietary_requirements:
   keywords:
+    - "restrictii alimentare"
+    - "aveti restrictii alimentare"
     - "cerinte alimentare"
     - "regim alimentar"
     - "preferinte alimentare"
@@ -1433,9 +1459,7 @@ dietary_requirements:
     - "тип питания"
     - "вегетарианец"
   patterns:
-    - 'cerin[tț]e\s*alimentar'
-    - 'regim\s*alimentar'
-    - 'preferin[tț]e\s*alimentar'
+    - '(restric[tț]ii|cerin[tț]e|regim|preferin[tț]e)\s*alimentar'
     - 'diet(ary)?\s*(requirement|restriction|preference|need)'
     - '(vegetarian|vegan|halal|kosher)'
     - 'диетическ.*(требован|ограничен|предпочтен)'
