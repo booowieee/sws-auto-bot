@@ -86,24 +86,36 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                 if nav_type == "next" and nav_btn:
                     logger.info(f"Navigating to next section from section #{page_index}...")
                     old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                    try:
-                        await nav_btn.scroll_into_view_if_needed()
-                        await nav_btn.click(force=True, no_wait_after=True, timeout=5000)
-                    except Exception as e:
-                        logger.warning(f"Standard click on Next button failed: {e}. Trying dispatch_event...")
+                    
+                    navigated = False
+                    for attempt in range(1, 4):
                         try:
-                            await nav_btn.dispatch_event("click")
-                        except Exception:
-                            pass
+                            await nav_btn.scroll_into_view_if_needed()
+                            await nav_btn.click(force=True, no_wait_after=True, timeout=5000)
+                        except Exception as e:
+                            logger.warning(f"Click on Next button attempt {attempt} failed: {e}. Trying dispatch_event...")
+                            try:
+                                await nav_btn.dispatch_event("click")
+                            except Exception:
+                                pass
 
-                    await asyncio.sleep(1.5)
-                    try:
-                        await page.wait_for_load_state("domcontentloaded", timeout=5000)
-                    except Exception:
-                        pass
+                        # Polling wait for DOM to transition to next section (up to 3.5s per click attempt)
+                        for _ in range(12):
+                            await asyncio.sleep(0.3)
+                            new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
+                            if new_fields != old_fields:
+                                navigated = True
+                                break
 
-                    new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                    if old_fields == new_fields:
+                            # Check if validation error is explicitly visible
+                            error_alerts = page.locator('[role="alert"]:visible, .v5Duua:visible, .R2oA3c:visible')
+                            if await error_alerts.count() > 0:
+                                break
+
+                        if navigated:
+                            break
+
+                    if not navigated:
                         error_alerts = page.locator('[role="alert"], .v5Duua, .R2oA3c')
                         err_count = await error_alerts.count()
                         err_texts = []
