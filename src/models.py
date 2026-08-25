@@ -151,6 +151,9 @@ class WorkInfo(BaseModel):
     salary_expectations: str = ""
     references: str = ""
     travel_history: str = ""
+    driving_license_categories: str = "Category B (Car)"
+    can_ride_bicycle: str = "Da"
+    can_swim: str = "Da"
 
 
 class LogisticsInfo(BaseModel):

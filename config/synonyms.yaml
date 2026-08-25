@@ -951,6 +951,49 @@ driving_license:
     - 'водительск.*(прав|удостоверен)'
   profile_key: work.driving_license
 
+driving_license_categories:
+  keywords:
+    - "driving licence categories"
+    - "driving license categories"
+    - "categorii permis"
+    - "categorii permis de conducere"
+    - "категории водительских прав"
+    - "категории прав"
+  patterns:
+    - '(driving\s*licen[cs]e|permis|водител.*прав).*categor'
+    - 'categor.*(permis|licen|прав)'
+  profile_key: work.driving_license_categories
+
+bicycle:
+  keywords:
+    - "can you ride a bicycle"
+    - "ride a bicycle"
+    - "mers pe bicicleta"
+    - "bicicleta"
+    - "ездить на велосипеде"
+    - "умеете ездить на велосипеде"
+    - "езда на велосипеде"
+  patterns:
+    - 'ride\s*(a\s*)?bicycle'
+    - 'biciclet'
+    - 'велосипед'
+  profile_key: work.can_ride_bicycle
+
+swimming:
+  keywords:
+    - "can you swim"
+    - "swim"
+    - "stiti sa inotati"
+    - "inot"
+    - "умеете плавать"
+    - "плавание"
+  patterns:
+    - 'can\s*you\s*swim'
+    - '\bswim\b'
+    - '[iî]not'
+    - 'плава'
+  profile_key: work.can_swim
+
 experience_agriculture:
   keywords:
     - experienta

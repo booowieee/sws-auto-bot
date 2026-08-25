@@ -335,48 +335,82 @@ class FormFiller:
         checkboxes = container.locator('[role="checkbox"]')
         count = await checkboxes.count()
 
-        for i in range(count):
-            cb = checkboxes.nth(i)
-            data_val = (await cb.get_attribute("data-value") or "").strip().lower()
-            aria_label = (await cb.get_attribute("aria-label") or "").strip().lower()
-            inner_txt = (await cb.inner_text()).strip().lower()
+        # If primary container has no checkboxes, try index-based container fallback
+        if count == 0 and 0 < field.index:
+            containers = self.page.locator('[role="listitem"]')
+            if await containers.count() >= field.index:
+                container = containers.nth(field.index - 1)
+                checkboxes = container.locator('[role="checkbox"]')
+                count = await checkboxes.count()
 
-            parent_wrapper = cb.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
-            parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
-
-            data_val_nd = strip_diacritics(data_val)
-            aria_label_nd = strip_diacritics(aria_label)
-            inner_txt_nd = strip_diacritics(inner_txt)
-            parent_txt_nd = strip_diacritics(parent_txt)
-
-            if (
-                target_clean in (data_val, aria_label, inner_txt)
-                or target_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
-                or target_clean in parent_txt
-                or target_nd in parent_txt_nd
-                or (len(target_clean) >= 3 and (target_clean in data_val or data_val in target_clean or target_nd in data_val_nd or data_val_nd in target_nd))
-            ):
-                await cb.scroll_into_view_if_needed()
-                try:
-                    await cb.click(force=True, timeout=2000)
-                except Exception:
-                    pass
-
-                checked = await cb.get_attribute("aria-checked")
-                if checked != "true" and await parent_wrapper.count() > 0:
+        # If target is negative (e.g. "Nu", "No", "None", "Nu detin")
+        is_negative = target_clean in ("nu", "no", "нет", "none", "niciunul", "niciuna", "nu detin", "nu am")
+        if is_negative:
+            for i in range(count):
+                cb = checkboxes.nth(i)
+                txt = ((await cb.inner_text()) or (await cb.get_attribute("aria-label")) or "").lower()
+                txt_nd = strip_diacritics(txt)
+                if any(neg in txt_nd for neg in ("none", "niciun", "niciuna", "nu detin", "nu am", "fara", "нет", "отсутств")):
+                    await cb.scroll_into_view_if_needed()
                     try:
-                        await parent_wrapper.click(force=True, timeout=2000)
+                        await cb.click(force=True, timeout=2000)
                     except Exception:
                         pass
+                    return
+            # If no explicit "None" checkbox exists and field is optional, skip gracefully
+            if not field.required:
                 return
 
-        opt_label = container.get_by_text(option_text, exact=False).first
-        if await opt_label.count() > 0:
-            await opt_label.scroll_into_view_if_needed()
-            await opt_label.click(force=True, timeout=2000)
-            return
+        # Split comma-separated items if multiple selections
+        items_to_match = [s.strip() for s in target_clean.split(",") if s.strip()] if "," in target_clean else [target_clean]
 
-        logger.warning(f"Could not locate checkbox option '{option_text}' in field '{field.label}'")
+        for item in items_to_match:
+            item_nd = strip_diacritics(item)
+            matched = False
+            for i in range(count):
+                cb = checkboxes.nth(i)
+                data_val = (await cb.get_attribute("data-value") or "").strip().lower()
+                aria_label = (await cb.get_attribute("aria-label") or "").strip().lower()
+                inner_txt = (await cb.inner_text()).strip().lower()
+
+                parent_wrapper = cb.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
+                parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
+
+                data_val_nd = strip_diacritics(data_val)
+                aria_label_nd = strip_diacritics(aria_label)
+                inner_txt_nd = strip_diacritics(inner_txt)
+                parent_txt_nd = strip_diacritics(parent_txt)
+
+                if (
+                    item in (data_val, aria_label, inner_txt)
+                    or item_nd in (data_val_nd, aria_label_nd, inner_txt_nd)
+                    or item in parent_txt
+                    or item_nd in parent_txt_nd
+                    or (len(item) >= 3 and (item in data_val or data_val in item or item_nd in data_val_nd or data_val_nd in item_nd or item_nd in parent_txt_nd))
+                ):
+                    await cb.scroll_into_view_if_needed()
+                    try:
+                        await cb.click(force=True, timeout=2000)
+                    except Exception:
+                        pass
+
+                    checked = await cb.get_attribute("aria-checked")
+                    if checked != "true" and await parent_wrapper.count() > 0:
+                        try:
+                            await parent_wrapper.click(force=True, timeout=2000)
+                        except Exception:
+                            pass
+                    matched = True
+                    break
+
+            if not matched:
+                opt_label = container.get_by_text(item, exact=False).first
+                if await opt_label.count() > 0:
+                    await opt_label.scroll_into_view_if_needed()
+                    try:
+                        await opt_label.click(force=True, timeout=2000)
+                    except Exception:
+                        pass
 
     async def _select_dropdown(self, field: FormField, option_text: str) -> None:
         if not option_text:
@@ -449,6 +483,32 @@ class FormFiller:
                         break
                 elif any(w in target_nd for w in ("avansat", "advanced", "c1", "c2", "fluent")):
                     if any(w in txt_nd for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
+                        best_opt = opt
+                        break
+
+                # Driving license category matches
+                if any(w in target_nd for w in ("categoria b", "category b", "cat b", "b", "car", "autoturism")):
+                    if any(w in txt_nd for w in ("categoria b", "category b", "cat b", "(b)", "car", "autoturism", "легков")):
+                        best_opt = opt
+                        break
+
+                # Emergency contact relationship matches
+                if any(w in target_nd for w in ("mother", "mama", "мать", "мама")):
+                    if any(w in txt_nd for w in ("mother", "mama", "мать", "мама", "parinte", "parent", "родител")):
+                        best_opt = opt
+                        break
+                elif any(w in target_nd for w in ("father", "tata", "отец", "папа")):
+                    if any(w in txt_nd for w in ("father", "tata", "отец", "папа", "parinte", "parent", "родител")):
+                        best_opt = opt
+                        break
+                elif any(w in target_nd for w in ("spouse", "sot", "sotie", "супруг", "супруга", "муж", "жена")):
+                    if any(w in txt_nd for w in ("spouse", "sot", "sotie", "супруг", "супруга", "муж", "жена")):
+                        best_opt = opt
+                        break
+
+                # Physical condition rating matches
+                if any(w in target_nd for w in ("excelenta", "excellent", "отличн", "forte buna", "good", "хорош")):
+                    if any(w in txt_nd for w in ("excelent", "отличн", "buna", "good", "хорош", "5", "4")):
                         best_opt = opt
                         break
 

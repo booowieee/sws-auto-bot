@@ -333,7 +333,15 @@ class FieldMatcher:
             syns_clean = [s.lower().strip() for s in syns]
             syns_nodiacritics = [strip_diacritics(s) for s in syns_clean]
 
-            if target_clean in syns_clean or target_nodiacritics in syns_nodiacritics or target_clean == key_clean:
+            is_match = (
+                target_clean in syns_clean 
+                or target_nodiacritics in syns_nodiacritics 
+                or target_clean == key_clean
+                or (key_clean == "da" and (target_clean.startswith("da") or target_clean.startswith("yes") or target_clean.startswith("да")))
+                or (key_clean == "nu" and (target_clean.startswith("nu") or target_clean.startswith("no") or target_clean.startswith("нет")))
+            )
+
+            if is_match:
                 for opt in options:
                     opt_lower = opt.lower().strip()
                     opt_nodiacritics = strip_diacritics(opt_lower)
