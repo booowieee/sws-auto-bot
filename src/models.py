@@ -155,6 +155,7 @@ class WorkInfo(BaseModel):
 class LogisticsInfo(BaseModel):
     preferred_airport: str = ""
     accommodation_pref: str = ""
+    room_sharing: str = "Da"
     return_commitment: str = ""
     bank_iban: str = ""
     bank_swift: str = ""

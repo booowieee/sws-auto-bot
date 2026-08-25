@@ -781,7 +781,7 @@ phone:
     - 'telephone'
     - 'whatsapp'
     - 'viber'
-    - 'mobil[e]?'
+    - '^(?!.*(home|cazare|house|caravan|living|room|accommodation)).*\b(mobile|mobil)\s*(phone|number|telefon|tel)?'
     - 'telecomunica[tț]ie'
     - 'номер\s*телефон'
     - 'номер\s*для\s*связи'
@@ -1153,25 +1153,44 @@ physical_condition:
 
 caravan_acceptance:
   keywords:
+    - "do you accept caravan / mobile home accommodation"
+    - "do you accept caravan accommodation"
+    - "caravan / mobile home accommodation"
+    - "caravan or mobile home"
+    - "caravan accommodation"
+    - "caravan living"
     - "cazarea in rulote"
     - "cazarea in rulote (caravane)"
+    - "acceptati cazarea in rulote"
     - "rulote"
     - "caravane"
-    - "caravan living"
-    - "caravan accommodation"
-    - "farm caravan accommodation"
-    - "acceptati cazarea in rulote"
-    - "cazare rulota"
     - "проживание в караванах"
     - "проживание в кемпинге"
-    - "готовы жить в кемпинге"
   patterns:
+    - 'caravan(\s*(\/|or)?\s*mobile\s*home)?\s*accommodation'
+    - 'accept.*(caravan|mobile\s*home|rulot)'
+    - '(cazare|living|accommodation).*(rulot|caravan|mobile\s*home)'
     - 'cazare.*(rulot|caravan)'
-    - 'caravan\s*(living|accommodation)'
-    - 'accepta[tț]i.*cazare'
-    - 'on-site.*caravan'
     - 'проживан.*(караван|кемпинг|вагончик)'
   profile_key: work.caravan_acceptance
+
+room_sharing:
+  keywords:
+    - "are you willing to share a room with other workers"
+    - "willing to share a room"
+    - "share a room with other workers"
+    - "share a room"
+    - "acceptati impartirea camerei cu alti muncitori"
+    - "impartirea camerei"
+    - "impartirea camerei cu alti muncitori"
+    - "готовность делить комнату"
+    - "совместное проживание в комнате"
+  patterns:
+    - 'share\s*(a\s*)?room(\s*with\s*(other\s*)?workers)?'
+    - '[iî]mp[aă]r[tț]ir.*camer'
+    - 'делит.*комнат'
+    - 'совместн.*проживан.*комнат'
+  profile_key: logistics.room_sharing
 
 terms_and_agreements:
   keywords:

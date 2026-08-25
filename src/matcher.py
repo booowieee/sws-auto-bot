@@ -71,6 +71,7 @@ class FieldMatcher:
         "criminal_record",
         "no_recruitment_fees",
         "caravan_acceptance",
+        "room_sharing",
         "medical_conditions",
         "dietary_requirements",
         "shoe_size",
@@ -274,6 +275,10 @@ class FieldMatcher:
             return "M"
         if profile_key == "health.dietary_requirements" and not current:
             return "Nu"
+        if profile_key == "work.caravan_acceptance" and not current:
+            return "Da"
+        if profile_key == "logistics.room_sharing" and not current:
+            return "Da"
 
         return current
 
