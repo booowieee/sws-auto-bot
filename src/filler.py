@@ -222,10 +222,10 @@ class FormFiller:
             parent_wrapper = radio.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
             parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
 
-            data_val_nd = self._strip_diacritics(data_val)
-            aria_label_nd = self._strip_diacritics(aria_label)
-            inner_txt_nd = self._strip_diacritics(inner_txt)
-            parent_txt_nd = self._strip_diacritics(parent_txt)
+            data_val_nd = strip_diacritics(data_val)
+            aria_label_nd = strip_diacritics(aria_label)
+            inner_txt_nd = strip_diacritics(inner_txt)
+            parent_txt_nd = strip_diacritics(parent_txt)
 
             if (
                 target_clean in (data_val, aria_label, inner_txt)
@@ -263,7 +263,7 @@ class FormFiller:
 
         container = await self._get_container(field)
         target_clean = option_text.strip().lower()
-        target_nd = self._strip_diacritics(target_clean)
+        target_nd = strip_diacritics(target_clean)
 
         checkboxes = container.locator('[role="checkbox"]')
         count = await checkboxes.count()
@@ -277,10 +277,10 @@ class FormFiller:
             parent_wrapper = cb.locator("xpath=ancestor::*[contains(@class, 'docssharedWizToggleLabeledContainer') or contains(@class, 'geS5nc') or self::label]").first
             parent_txt = (await parent_wrapper.inner_text()).strip().lower() if await parent_wrapper.count() > 0 else ""
 
-            data_val_nd = self._strip_diacritics(data_val)
-            aria_label_nd = self._strip_diacritics(aria_label)
-            inner_txt_nd = self._strip_diacritics(inner_txt)
-            parent_txt_nd = self._strip_diacritics(parent_txt)
+            data_val_nd = strip_diacritics(data_val)
+            aria_label_nd = strip_diacritics(aria_label)
+            inner_txt_nd = strip_diacritics(inner_txt)
+            parent_txt_nd = strip_diacritics(parent_txt)
 
             if (
                 target_clean in (data_val, aria_label, inner_txt)
@@ -312,11 +312,16 @@ class FormFiller:
         logger.warning(f"Could not locate checkbox option '{option_text}' in field '{field.label}'")
 
     async def _select_dropdown(self, field: FormField, option_text: str) -> None:
+        if not option_text:
+            return
+
         container = await self._get_container(field)
         target_clean = option_text.lower().strip()
+        target_nd = strip_diacritics(target_clean)
 
-        dropdown = container.locator('[role="listbox"]')
+        dropdown = container.locator('[role="listbox"], .quantumWizMenuPaperselectEl')
         if await dropdown.count() > 0:
+            await dropdown.first.scroll_into_view_if_needed()
             await dropdown.first.click(force=True, timeout=3000)
             await asyncio.sleep(0.4)
 
@@ -327,12 +332,14 @@ class FormFiller:
                 options = self.page.locator('[role="option"]')
                 count = await options.count()
 
-            # 1. Exact match pass (highest precision)
+            # 1. Exact match pass (with and without diacritics)
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
-                if txt == target_clean:
+                txt_nd = strip_diacritics(txt)
+                if txt == target_clean or txt_nd == target_nd:
                     try:
+                        await opt.scroll_into_view_if_needed()
                         await opt.click(force=True, timeout=3000)
                         return
                     except Exception:
@@ -343,17 +350,18 @@ class FormFiller:
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
+                txt_nd = strip_diacritics(txt)
                 if txt in ("alege", "choose", "выбрать", "--", "", "select"):
                     continue
 
                 # Nationality matches
-                if ("moldov" in target_clean or "chisinau" in target_clean) and "moldov" in txt:
+                if ("moldov" in target_nd or "chisinau" in target_nd) and "moldov" in txt_nd:
                     best_opt = opt
                     break
-                if "roman" in target_clean and "roman" in txt:
+                if "roman" in target_nd and "roman" in txt_nd:
                     best_opt = opt
                     break
-                if "ucrain" in target_clean and "ucrain" in txt:
+                if "ucrain" in target_nd and "ucrain" in txt_nd:
                     best_opt = opt
                     break
 
@@ -364,26 +372,27 @@ class FormFiller:
                         break
 
                 # English level matches
-                if any(w in target_clean for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar")):
-                    if any(w in txt for w in ("incepator", "începător", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов")):
+                if any(w in target_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar")):
+                    if any(w in txt_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов")):
                         best_opt = opt
                         break
-                elif any(w in target_clean for w in ("mediu", "intermediate", "b1", "b2", "conversational")):
-                    if any(w in txt for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн")):
+                elif any(w in target_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational")):
+                    if any(w in txt_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн")):
                         best_opt = opt
                         break
-                elif any(w in target_clean for w in ("avansat", "advanced", "c1", "c2", "fluent")):
-                    if any(w in txt for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
+                elif any(w in target_nd for w in ("avansat", "advanced", "c1", "c2", "fluent")):
+                    if any(w in txt_nd for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
                         best_opt = opt
                         break
 
                 # General substring match (longer strings only)
-                if len(target_clean) > 3 and (target_clean in txt or txt in target_clean):
+                if len(target_nd) > 3 and (target_nd in txt_nd or txt_nd in target_nd):
                     best_opt = opt
                     break
 
             if best_opt:
                 try:
+                    await best_opt.scroll_into_view_if_needed()
                     await best_opt.click(force=True, timeout=3000)
                     return
                 except Exception:
@@ -393,6 +402,7 @@ class FormFiller:
             if field.required and count > 1:
                 logger.warning(f"Selecting first valid option for required dropdown '{field.label}'")
                 try:
+                    await options.nth(1).scroll_into_view_if_needed()
                     await options.nth(1).click(force=True, timeout=3000)
                     return
                 except Exception:
@@ -401,14 +411,61 @@ class FormFiller:
         logger.warning(f"Could not select dropdown option '{option_text}' in field '{field.label}'")
 
     async def _fill_date(self, field: FormField, date_val: str) -> None:
-        container = await self._get_container(field)
+        if not date_val:
+            return
 
+        container = await self._get_container(field)
+        d_clean = date_val.strip()
+
+        # Parse date parts
+        day_str, month_str, year_str = "", "", ""
+        for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(d_clean, fmt)
+                day_str = f"{dt.day:02d}"
+                month_str = f"{dt.month:02d}"
+                year_str = str(dt.year)
+                break
+            except ValueError:
+                continue
+
+        # Check for multi-part sub-inputs (Google Forms separate Day, Month, Year widgets)
+        inputs = container.locator('input[type="text"], input[type="number"], input:not([type])')
+        input_count = await inputs.count()
+
+        if input_count >= 3 and day_str and month_str and year_str:
+            # Multi-input date field (Day, Month, Year)
+            for i in range(input_count):
+                inp = inputs.nth(i)
+                aria = strip_diacritics((await inp.get_attribute("aria-label") or "").lower())
+                await inp.scroll_into_view_if_needed()
+                try:
+                    await inp.click(force=True, timeout=1000)
+                except Exception:
+                    pass
+
+                if any(w in aria for w in ("zi", "day", "день")):
+                    await inp.fill(day_str)
+                elif any(w in aria for w in ("luna", "month", "месяц")):
+                    await inp.fill(month_str)
+                elif any(w in aria for w in ("an", "year", "год")):
+                    await inp.fill(year_str)
+                elif i == 0:
+                    await inp.fill(day_str)
+                elif i == 1:
+                    await inp.fill(month_str)
+                elif i == 2:
+                    await inp.fill(year_str)
+            return
+
+        # Single input field
         date_input = container.locator('input[type="date"], input[type="text"], input:not([type])')
         if await date_input.count() > 0:
             first_input = date_input.first
             input_type = await first_input.get_attribute("type")
+            await first_input.scroll_into_view_if_needed()
             if input_type == "date":
-                iso_val = self._convert_date_to_iso(date_val)
+                iso_val = f"{year_str}-{month_str}-{day_str}" if (year_str and month_str and day_str) else self._convert_date_to_iso(d_clean)
                 try:
                     await first_input.fill(iso_val)
                     return
@@ -418,9 +475,9 @@ class FormFiller:
                 await first_input.click(force=True, timeout=2000)
             except Exception:
                 await first_input.focus()
-            await first_input.fill(date_val)
+            await first_input.fill(d_clean)
         else:
-            await self._type_text(field, date_val)
+            await self._type_text(field, d_clean)
 
     @staticmethod
     def _convert_date_to_iso(val: str) -> str:

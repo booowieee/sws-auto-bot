@@ -92,7 +92,18 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
 
                     new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
                     if old_fields == new_fields:
-                        err_msg = f"Section #{page_index} failed to advance after clicking Next (validation error)"
+                        error_alerts = page.locator('[role="alert"], .v5Duua, .R2oA3c')
+                        err_count = await error_alerts.count()
+                        err_texts = []
+                        for i in range(err_count):
+                            elem = error_alerts.nth(i)
+                            if await elem.is_visible():
+                                txt = (await elem.inner_text()).strip()
+                                if txt and txt not in err_texts:
+                                    err_texts.append(txt)
+
+                        err_detail = f": {err_texts}" if err_texts else ""
+                        err_msg = f"Section #{page_index} failed to advance after clicking Next (validation error{err_detail})"
                         logger.error(err_msg)
                         report.error_message = err_msg
                         await reporter.capture_milestone(f"section_{page_index:02d}_nav_error")

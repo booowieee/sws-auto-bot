@@ -197,7 +197,7 @@ class FieldMatcher:
                 current = ""
                 break
 
-        # Fallback: if age is requested but empty in profile, auto-compute from date_of_birth
+        # Fallback 1: Age requested but empty in profile -> auto-compute from date_of_birth
         if profile_key == "personal.age" and not current:
             dob = self._resolve_profile_value("personal.date_of_birth")
             if dob:
@@ -209,6 +209,40 @@ class FieldMatcher:
                         return str(years)
                     except ValueError:
                         continue
+
+        # Fallback 2: Date of birth parts (day, month, year) requested but empty -> extract from date_of_birth
+        if profile_key.startswith("personal.date_of_birth_parts.") and not current:
+            part_name = profile_key.split(".")[-1]
+            dob = self._resolve_profile_value("personal.date_of_birth")
+            if dob:
+                for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y", "%Y-%m-%d"):
+                    try:
+                        dt = datetime.strptime(str(dob).strip(), fmt)
+                        if part_name == "day":
+                            return f"{dt.day:02d}"
+                        elif part_name == "month":
+                            return f"{dt.month:02d}"
+                        elif part_name == "year":
+                            return str(dt.year)
+                    except ValueError:
+                        continue
+
+        # Fallback 3: Full name requested but empty -> combine first_name + last_name
+        if profile_key == "personal.full_name" and not current:
+            first = self._resolve_profile_value("personal.first_name")
+            last = self._resolve_profile_value("personal.last_name")
+            if first or last:
+                return f"{first} {last}".strip()
+
+        # Fallback 4: First/Last name requested but empty -> split from full_name
+        if profile_key == "personal.first_name" and not current:
+            full = self._resolve_profile_value("personal.full_name")
+            if full:
+                return str(full).split()[0]
+        if profile_key == "personal.last_name" and not current:
+            full = self._resolve_profile_value("personal.full_name")
+            if full and len(str(full).split()) > 1:
+                return " ".join(str(full).split()[1:])
 
         return current
 
