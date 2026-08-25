@@ -3,10 +3,11 @@ import sys
 import time
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 import click
 
 from src.analyzer import FormAnalyzer
+from src.batch_runner import BatchRunner
 from src.browser import BrowserManager
 from src.config import Config, ensure_directories, load_profile, load_synonyms
 from src.filler import FormFiller
@@ -236,8 +237,6 @@ async def run_session_check() -> int:
             logger.warning("No active Google session found. Please run with --login.")
             return 1
 
-
-from src.batch_runner import BatchRunner
 
 
 @click.command()

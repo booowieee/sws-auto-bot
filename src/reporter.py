@@ -3,7 +3,7 @@ import html
 import json
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 import aiohttp
 from playwright.async_api import Page
 

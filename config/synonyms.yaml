@@ -824,7 +824,7 @@ preferred_contact_method:
     - 'preferred\s*communication'
     - 'предпочтительн.*способ.*связ'
     - 'способ.*связ'
-  profile_key: contacts.email
+  profile_key: contacts.phone
 
 # ------------------------------------------------------------------------------
 # 7. WORK, CROPS, VISA HISTORY & PREFERENCES
@@ -2201,7 +2201,7 @@ no_recruitment_fees:
     - 'did\s*you\s*pay.*fee'
     - 'не\s*платили.*(трудоустройств|сбор)'
     - 'незаконн.*платеж'
-  profile_key: work.caravan_acceptance
+  profile_key: compliance.truthful_declaration
 
 uk_labour_laws:
   keywords:
@@ -2221,7 +2221,7 @@ uk_labour_laws:
     - 'знаете.*трудов.*законодательств'
     - 'права\s*работник'
     - 'трудов.*прав.*(uk|великобритан)'
-  profile_key: work.caravan_acceptance
+  profile_key: compliance.truthful_declaration
 
 photo_upload:
   keywords:

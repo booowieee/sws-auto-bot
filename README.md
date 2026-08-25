@@ -1,5 +1,11 @@
 # SWS Auto-Fill Bot
 
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-1.49-2EAD33?logo=playwright&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-V2-E92063?logo=pydantic&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 Автоматическое заполнение и отправка регистрационных анкет Google Forms для программы UK Seasonal Worker Scheme (SWS). Заполняет форму при открытии набора оператором.
 
 ---
@@ -29,35 +35,41 @@
 
 ## Архитектура
 
-```
-                    SWS Auto-Fill Bot
+```mermaid
+flowchart TB
+    subgraph Input["Конфигурация"]
+        PROFILE["profile.yaml"]
+        SYNONYMS["synonyms.yaml"]
+    end
 
-   Profile & Synonyms     Form Analyzer           Form Filler
+    subgraph Watcher["HTTP Мониторинг"]
+        W["FormWatcher"]
+        W -->|"aiohttp poll"| CHECK{"Форма открыта?"}
+        CHECK -->|"Нет"| W
+    end
 
-   profile.yaml  ----->  1. Загрузка DOM   ----->  1. Ввод текста
-   synonyms.yaml         2. Извлечение полей       2. Выбор Radio/Select
-                          3. Определение типов      3. Переход по секциям
-                                 |                  4. Нажатие Submit
-                          +------+------+                  |
-                          | Tier 1:     |                  |
-                          | FieldMatcher|                  |
-                          | (Regex/Fuzz)|                  |
-                          +------+------+                  |
-                                 | (unmapped fields)       |
-                          +------+------+                  |
-                          | Tier 2:     |                  |
-                          | LLM Fallback|                  |
-                          | (Gemini/Groq)                  |
-                          +-------------+                  |
-                                                           |
-   +------------------------------------------------------+
-   |                 Playwright Engine                    |
-   | - Chromium persistent context                        |
-   +------------------------------------------------------+
-   |                 Execution Reporter                   |
-   | - Скриншоты секций                                   |
-   | - Отправка отчета в Telegram                         |
-   +------------------------------------------------------+
+    CHECK -->|"Да"| PLAYWRIGHT
+
+    subgraph PLAYWRIGHT["Playwright Engine"]
+        direction TB
+        ANALYZER["FormAnalyzer<br/>Извлечение DOM"]
+        MATCHER["FieldMatcher<br/>Tier 1: Regex/Fuzz"]
+        LLM["LLM Router<br/>Tier 2: Gemini/Groq"]
+        FILLER["FormFiller<br/>Ввод, Radio, Select"]
+        SUBMIT["Submit + Verify"]
+
+        ANALYZER --> MATCHER
+        MATCHER -->|"unmatched"| LLM
+        MATCHER --> FILLER
+        LLM --> FILLER
+        FILLER --> SUBMIT
+    end
+
+    PROFILE --> MATCHER
+    SYNONYMS --> MATCHER
+
+    SUBMIT --> REPORTER["ExecutionReporter<br/>Скриншоты + JSON"]
+    REPORTER --> TELEGRAM["Telegram Bot<br/>Отчет + Алерты"]
 ```
 
 ---

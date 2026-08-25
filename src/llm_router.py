@@ -202,6 +202,7 @@ class LLMRouter:
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
             "temperature": 0.0,
+            "max_tokens": 1024,
             "response_format": {"type": "json_object"},
         }
 

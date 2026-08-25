@@ -247,12 +247,21 @@ class FormFiller:
 
         # Date format text input fallback
         lbl_lower = field.label.lower() if field.label else ""
-        if any(d_fmt in lbl_lower for d_fmt in ("today", "azi", "astazi", "сегодня", "data completarii", "дата заполнения")):
+        lbl_lower_nd = strip_diacritics(lbl_lower)
+        # Today-date keywords with word boundaries to avoid "azi" matching "finalizare"
+        today_patterns = (
+            r"\btoday\b", r"\bazi\b", r"\bastazi\b", r"\bсегодня\b",
+            r"\bdata\s+completarii\b", r"\bдата\s+заполнения\b",
+            r"\btoday'?s?\s+date\b", r"\bdata\s+de\s+azi\b",
+        )
+        if any(re.search(p, lbl_lower_nd) for p in today_patterns):
             if not text or text == "None":
                 text = datetime.now().strftime("%d/%m/%Y")
         elif any(d_fmt in lbl_lower for d_fmt in ("(dd/mm/yyyy)", "(zz/ll/aaaa)", "(дд/мм/гггг)", "dd/mm/yyyy", "zz/ll/aaaa")):
             if not text or not any(char.isdigit() for char in text):
-                text = "01/05/2025"
+                # Dynamic fallback: 90 days from now
+                from datetime import timedelta
+                text = (datetime.now() + timedelta(days=90)).strftime("%d/%m/%Y")
 
         container = await self._get_container(field)
         locator = None

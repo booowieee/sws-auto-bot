@@ -100,6 +100,7 @@ async def cmd_start(message: Message, db: BotDatabase):
         "• <code>/fill &lt;url&gt; [--test]</code> - заполнить форму сейчас\n"
         "• <code>/profile</code> - данные профиля\n"
         "• <code>/logs</code> - отчеты\n"
+        "• <code>/whitelist</code> - управление доступом\n"
         "• <code>/help</code> - справка",
         reply_markup=get_status_dashboard_keyboard(),
         parse_mode="HTML",
@@ -116,9 +117,14 @@ async def cmd_help(message: Message, db: BotDatabase):
         "<b>Мониторинг формы:</b>\n"
         "<code>/watch https://docs.google.com/forms/d/e/.../viewform 20</code>\n"
         "Опрос каждые 20 сек. При открытии заполняет и присылает отчет со скриншотами.\n\n"
+        "<code>/unwatch &lt;url&gt;</code> - остановить слежение за формой\n"
+        "<code>/status</code> - текущий статус и активные задачи\n\n"
         "<b>Заполнение вручную:</b>\n"
         "• <code>/fill &lt;url&gt;</code> - боевое заполнение (отправка)\n"
         "• <code>/fill &lt;url&gt; --test</code> - тест (без отправки)\n\n"
+        "<b>Информация:</b>\n"
+        "• <code>/profile</code> - данные профиля кандидата\n"
+        "• <code>/logs</code> - последние отчеты выполнения\n\n"
         "<b>Управление доступом:</b>\n"
         "• <code>/whitelist</code> - список пользователей\n"
         "• <code>/whitelist add &lt;id&gt;</code> - добавить оператора\n"
@@ -253,10 +259,12 @@ async def cmd_fill(message: Message, command: CommandObject, db: BotDatabase):
 
     # Launch autofill in background
     from src.__main__ import run_autofill
+    from src.watcher_manager import _browser_lock
 
     async def _do_fill():
         try:
-            exit_code = await run_autofill(url=url, is_test=is_test, headless=True)
+            async with _browser_lock:
+                exit_code = await run_autofill(url=url, is_test=is_test, headless=True)
             res_text = "УСПЕШНО" if exit_code == 0 else "ОШИБКА"
             await status_msg.edit_text(
                 f"<b>[SWS Auto-Bot] Завершено: {res_text}</b>\n\nURL: <code>{url}</code>",

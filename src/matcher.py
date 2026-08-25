@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional, Tuple
 from rapidfuzz import fuzz
 
@@ -57,7 +57,6 @@ class FieldMatcher:
     """Matches Google Form fields against user profile data."""
 
     # Synonym keys that get priority routing before the general matching loop
-    # Synonym keys that get priority routing before the general matching loop
     PRIORITY_KEYS = (
         "consent_contact",
         "gdpr_consent",
@@ -114,8 +113,8 @@ class FieldMatcher:
 
     @staticmethod
     def _is_type_compatible(syn_key: str, field_type: FieldType) -> bool:
-        """Guards against matching raw text keys (email, phone) to radio/checkbox questions."""
-        if field_type in (FieldType.RADIO, FieldType.CHECKBOX):
+        """Guards against matching raw text keys (email, phone) to radio/checkbox/dropdown questions."""
+        if field_type in (FieldType.RADIO, FieldType.CHECKBOX, FieldType.DROPDOWN):
             if syn_key in (
                 "email",
                 "phone",
@@ -134,6 +133,8 @@ class FieldMatcher:
                 "emergency_phone",
                 "emergency_email",
                 "emergency_name",
+                "telegram_contact",
+                "social_media",
                 "date_of_birth",
                 "passport_issue_date",
                 "passport_expiry",
@@ -273,7 +274,7 @@ class FieldMatcher:
                 for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y", "%Y-%m-%d"):
                     try:
                         dt = datetime.strptime(str(dob).strip(), fmt)
-                        now = datetime.now()
+                        now = datetime.now(UTC)
                         years = now.year - dt.year - ((now.month, now.day) < (dt.month, dt.day))
                         return str(years)
                     except ValueError:
@@ -332,7 +333,7 @@ class FieldMatcher:
         if profile_key == "personal.today_date":
             return datetime.now().strftime("%d/%m/%Y")
         if profile_key in ("personal.signature", "compliance.signature") and not current:
-            return self._resolve_profile_value("personal.full_name") or "JOHN DOE"
+            return self._resolve_profile_value("personal.full_name") or ""
         if profile_key.startswith("compliance.") and not current:
             return "Da"
 

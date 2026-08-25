@@ -11,6 +11,9 @@ from src.config import Config
 from src.logger import logger
 from src.watcher import FormWatcher, CLOSED_MARKERS, OPEN_INDICATORS
 
+# Module-level lock to prevent concurrent Playwright browser sessions
+_browser_lock = asyncio.Lock()
+
 
 class WatcherManager:
     """Orchestrates concurrent 24/7 background form watchers with persistence and adaptive polling."""
@@ -57,9 +60,14 @@ class WatcherManager:
         save_to_db: bool = True,
     ) -> int:
         """Starts watching a single form URL in an async background task."""
-        if url in self._tasks and not self._tasks[url].done():
-            logger.info(f"Watcher already running for URL: {url}")
-            return 0
+        # Clean up finished tasks for this URL
+        if url in self._tasks:
+            if not self._tasks[url].done():
+                logger.info(f"Watcher already running for URL: {url}")
+                return 0
+            # Previous task finished — remove stale references
+            del self._tasks[url]
+            self._watchers.pop(url, None)
 
         if save_to_db:
             await self.db.add_watch_task(
@@ -163,9 +171,10 @@ class WatcherManager:
                         f"Launching automated form filler..."
                     )
 
-                    # Trigger autofill pipeline
+                    # Trigger autofill pipeline (locked to prevent concurrent browser sessions)
                     from src.__main__ import run_autofill
-                    exit_code = await run_autofill(url=url, is_test=watcher.is_test, headless=True)
+                    async with _browser_lock:
+                        exit_code = await run_autofill(url=url, is_test=watcher.is_test, headless=True)
                     status_str = "success" if exit_code == 0 else "failed"
                     self._stats[url]["status"] = status_str
                     await self.db.update_watch_status(url, status_str)
