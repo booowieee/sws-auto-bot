@@ -220,6 +220,11 @@ class FormFiller:
         if text is None:
             text = ""
 
+        # Date format text input fallback (e.g. if available_from is text like "Imediat")
+        if field.label and any(d_fmt in field.label.lower() for d_fmt in ("(dd/mm/yyyy)", "(zz/ll/aaaa)", "(дд/мм/гггг)", "dd/mm/yyyy", "zz/ll/aaaa")):
+            if text and not any(char.isdigit() for char in text):
+                text = "01/05/2025"
+
         container = await self._get_container(field)
         locator = None
 
@@ -269,6 +274,11 @@ class FormFiller:
 
         # Collect candidate synonym phrases for the option (RO / EN / RU)
         candidate_syns = [target_clean, target_nd]
+        if target_clean.startswith("da") or target_clean.startswith("yes") or target_clean.startswith("да") or target_clean in ("imediat", "immediately", "urgent", "срочно", "готов", "ready", "accept", "de acord"):
+            candidate_syns.extend([s.lower().strip() for s in SEMANTIC_OPTION_MAP.get("da", [])])
+        elif target_clean.startswith("nu") or target_clean.startswith("no") or target_clean.startswith("нет"):
+            candidate_syns.extend([s.lower().strip() for s in SEMANTIC_OPTION_MAP.get("nu", [])])
+
         for syn_group in SEMANTIC_OPTION_MAP.values():
             syn_group_clean = [s.lower().strip() for s in syn_group]
             if target_clean in syn_group_clean or target_nd in syn_group_clean:
@@ -337,6 +347,25 @@ class FormFiller:
                 await opt_label.scroll_into_view_if_needed()
                 try:
                     await opt_label.click(force=True, timeout=2000)
+                    return
+                except Exception:
+                    pass
+
+        # 3. Fallback for binary / required Yes-No questions
+        if count >= 2:
+            if target_clean in ("imediat", "immediately", "urgent", "срочно", "готов", "ready", "accept", "de acord") or target_clean.startswith("da") or target_clean.startswith("yes") or target_clean.startswith("да"):
+                first_r = radios.first
+                await first_r.scroll_into_view_if_needed()
+                try:
+                    await first_r.click(force=True, timeout=2000)
+                    return
+                except Exception:
+                    pass
+            elif target_clean.startswith("nu") or target_clean.startswith("no") or target_clean.startswith("нет"):
+                last_r = radios.nth(1)
+                await last_r.scroll_into_view_if_needed()
+                try:
+                    await last_r.click(force=True, timeout=2000)
                     return
                 except Exception:
                     pass
@@ -528,6 +557,12 @@ class FormFiller:
                 # Physical condition rating matches
                 if any(w in target_nd for w in ("excelenta", "excellent", "отличн", "forte buna", "good", "хорош")):
                     if any(w in txt_nd for w in ("excelent", "отличн", "buna", "good", "хорош", "5", "4")):
+                        best_opt = opt
+                        break
+
+                # Duration of stay matches (6 months / full season)
+                if any(w in target_nd for w in ("6 luni", "6 months", "6 мес", "tot sezonul", "full season", "весь сезон", "imediat")):
+                    if any(w in txt_nd for w in ("6", "full season", "tot sezonul", "весь сезон", "maxim", "luni", "months", "месяц")):
                         best_opt = opt
                         break
 

@@ -1053,27 +1053,18 @@ experience_agriculture:
 
 available_from:
   keywords:
-    - cand
-    - when
-    - когда
-    - disponibil
-    - available
-    - pleca
     - "start date"
     - "available from"
     - "available start date"
     - "earliest start date"
+    - "earliest available start date"
     - "earliest date available"
     - "when can you start"
-    - "travel immediately"
-    - "can you travel"
     - "departure date"
-    - "cand poti"
-    - "cand puteti"
-    - "cand sunteti gata"
-    - "suiti in autocar"
-    - "disponibilitate operationala"
-    - "disponibilitate plecare"
+    - "cand puteti incepe"
+    - "cand sunteti gata de plecare"
+    - "data inceperii activitatii"
+    - "data plecarii"
     - "doriti sa incepeti"
     - "sunteti gata de plecare"
     - "cand puteti pleca in uk"
@@ -1083,40 +1074,87 @@ available_from:
     - "когда можете приступить к работе"
     - "готовность к выезду"
   patterns:
-    - 'c[aâ]nd\s*(po[tț]i|puteti|e[sș]ti|plec[ai]?|sunte[tț]i)'
-    - 'autocar'
-    - 'when.*(available|start|leave|travel)'
     - 'start\s*date'
     - 'available\s*from'
-    - 'earliest\s*date'
+    - 'earliest.*(start|available|date)'
     - 'departure\s*date'
-    - 'travel\s*immediately'
-    - 'gata\s*de\s*plecare'
-    - 'disponibil(itate)?'
-    - 'когда.*(готов|можете|выезд|приступить)'
-    - 'желаемая\s*дата\s*выезда'
-    - 'готовност.*выезд'
+    - 'when.*(can\s*you\s*start|start\s*work)'
+    - 'c[aâ]nd\s*(po[tț]i|puteti|e[sș]ti|plec[ai]?)\s*(s[aă]\s*incepe[tț]i|pleca)'
+    - 'data\s*(inceperii|plec[aă]rii)'
+    - 'когда.*(готов|можете)\s*(выехать|приступить)'
+    - 'желаемая\s*дата\s*(выезда|начала)'
   profile_key: work.available_from
 
 duration_stay:
   keywords:
-    - "perioada dorita"
-    - "durata sederii"
+    - "how long are you available to work in the uk"
+    - "how long are you available to work"
+    - "how long are you available"
     - "duration of stay"
     - "how long can you stay"
     - "intended stay duration"
     - "length of stay"
+    - "contract duration"
+    - "perioada dorita"
+    - "durata sederii"
+    - "cat timp sunteti disponibil"
+    - "perioada de disponibilitate"
     - "срок пребывания"
     - "на какой срок готовы поехать"
     - "желаемая продолжительность работы"
+    - "на сколько времени вы доступны"
   patterns:
-    - 'durat[aă]\s*[sș]ederii'
-    - 'duration\s*of\s*stay'
-    - 'how\s*long.*stay'
+    - 'how\s*long.*(available|work|stay)'
+    - 'duration\s*(of\s*)?(stay|contract|work)'
     - 'length\s*of\s*stay'
-    - 'срок\s*пребыван'
-    - 'продолжительност.*работ'
+    - 'durat[aă]\s*([sș]ederii|contractului|muncii)'
+    - 'c[aâ]t\s*timp.*(disponibil|lucra)'
+    - 'perioad[aă].*(disponibilitate|dorit[aă])'
+    - 'срок\s*(пребыван|контракт|работ)'
+    - 'на\s*скольк.*(срок|готов|доступ)'
   profile_key: work.duration_stay
+
+travel_short_notice:
+  keywords:
+    - "can you travel to the uk at short notice"
+    - "can you travel at short notice"
+    - "travel at short notice"
+    - "short notice travel"
+    - "disponibilitate plecare rapida"
+    - "plecare in timp scurt"
+    - "puteti pleca in timp scurt"
+    - "urgent travel"
+    - "срочный выезд"
+    - "выезд в короткие сроки"
+    - "готовы выехать в кратчайшие сроки"
+  patterns:
+    - 'travel.*short\s*notice'
+    - 'short\s*notice'
+    - 'plecare.*(scurt|rapid|urgent)'
+    - 'timp\s*scurt'
+    - 'срочн.*выезд'
+    - 'кратчайш.*срок'
+  profile_key: work.caravan_acceptance
+
+travel_insurance:
+  keywords:
+    - "do you have a valid travel insurance"
+    - "valid travel insurance"
+    - "travel insurance"
+    - "medical insurance"
+    - "asigurare de calatorie"
+    - "asigurare medicala"
+    - "asigurare valabila"
+    - "медицинская страховка"
+    - "туристическая страховка"
+    - "страховка для выезда"
+  patterns:
+    - '(travel|medical)\s*insurance'
+    - 'valid.*insurance'
+    - 'asigurare.*(c[aă]l[aă]torie|medical[aă]|valabil[aă])'
+    - '(медицинск|туристическ|выездн|действующ).*страхов'
+    - 'страховк.*(выезд|поездк)'
+  profile_key: work.caravan_acceptance
 
 apply_type:
   keywords:
