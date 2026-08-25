@@ -632,20 +632,52 @@ city:
 
 country:
   keywords:
-    - tara
-    - country
-    - country of residence
-    - permanent residence country
-    - strana
-    - страна
-    - страна проживания
+    - "country of residence"
+    - "country of origin"
+    - "country of birth"
+    - "country of citizenship"
+    - "permanent residence country"
     - "tara de resedinta"
+    - "tara de origine"
     - "tara de domiciliu"
+    - "страна проживания"
+    - "страна рождения"
+    - "страна происхождения"
   patterns:
-    - '\b[tț]ar[aă]\b(\s*(de\s*)?(re[sș]edin[tț][aă]|domiciliu|origine|na[sș]tere))?'
-    - '\bcountry\b(\s*of\s*(residence|origin|birth))?'
-    - '\bстран[аыеу]\b'
+    - '^(?!.*(phone|telef|deport|refus|code|visa|conviction|criminal)).*(\b[tț]ar[aă]\b\s*(de\s*)?(re[sș]edin[tț][aă]|domiciliu|origine|na[sș]tere)|\bcountry\b\s*(of\s*)?(residence|origin|birth|citizenship)|\bстран[аыеу]\b\s*(проживания|рождения|происхождения))'
+    - '^country(\s*of\s*residence)?$'
+    - '^[tț]ar[aă](\s*de\s*re[sș]edin[tț][aă])?$'
+    - '^стран[аыеу](\s*проживания)?$'
   profile_key: personal.country
+
+valid_uk_visa:
+  keywords:
+    - "do you have a valid uk visa"
+    - "valid uk visa"
+    - "detineti viza uk"
+    - "aveti viza valabila pentru marea britanie"
+    - "есть ли действующая виза в великобританию"
+    - "действующая виза в uk"
+  patterns:
+    - '(valid|current)\s*(uk|british)?\s*visa'
+    - 'viz[aă]\s*valabil[aă]\s*(pentru\s*)?(uk|marea\s*britanie|anglia)'
+    - 'действующ.*виз.*(uk|великобритан|англи)'
+  profile_key: work.valid_uk_visa
+
+deportation:
+  keywords:
+    - "have you ever been deported from any country"
+    - "have you ever been deported"
+    - "deported from any country"
+    - "deportation"
+    - "ati fost deportat"
+    - "deportare"
+    - "были ли депортированы"
+    - "депортация"
+  patterns:
+    - 'deport(at|ed|ation|are)?'
+    - 'депорт(ация|ирован)?'
+  profile_key: work.deportation_history
 
 address_full:
   keywords:
@@ -826,20 +858,20 @@ visa_refusal:
 
 criminal_record:
   keywords:
-    - cazier
-    - "cazier judiciar"
-    - "criminal record"
+    - "do you have any criminal convictions"
     - "criminal convictions"
-    - "unspent criminal convictions"
-    - "cautions or convictions"
+    - "criminal record"
+    - "cazier"
+    - "cazier judiciar"
     - "antecedente penale"
+    - "aveti cazier"
     - "судимость"
     - "наличие судимости"
     - "привлекались к уголовной ответственности"
     - "справка о несудимости"
   patterns:
+    - 'criminal\s*(conviction|record|caution|offence)'
     - 'cazier(\s*judiciar)?'
-    - 'criminal\s*(record|conviction|caution)'
     - 'antecedente\s*penale'
     - 'судимост'
     - 'уголовн.*ответственност'
