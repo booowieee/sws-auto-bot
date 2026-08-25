@@ -128,6 +128,8 @@ passport_issue_date:
 
 passport_issuing_authority:
   keywords:
+    - "autoritatea emitenta a pasaportului"
+    - "autoritatea emitenta"
     - "organul emitent"
     - "issuing authority"
     - "authority of issue"
@@ -137,14 +139,37 @@ passport_issuing_authority:
     - "кем выдан паспорт"
     - "орган выдачи паспорта"
     - "орган выдачи"
+    - "eliberat de"
   patterns:
+    - 'autoritate[aă]?\s*(care\s*a\s*)?emitent[aă]?'
     - 'organ(ul)?\s*emitent'
-    - 'issuing\s*(authority|country)'
+    - 'issuing\s*(authority|country|body)'
     - 'authority\s*of\s*issue'
     - 'place\s*of\s*issue'
     - 'кем\s*выдан'
     - 'орган\s*выдачи'
+    - 'eliberat\s*de'
   profile_key: documents.passport_issuing_authority
+
+idnp:
+  keywords:
+    - "idnp"
+    - "cod numeric personal"
+    - "idnp / cod numeric personal"
+    - "idnp cod numeric personal"
+    - "cnp"
+    - "personal identification number"
+    - "national id number"
+    - "персональный код"
+    - "иин"
+    - "инн"
+  patterns:
+    - '\bidnp\b'
+    - 'cod\s*numeric\s*personal'
+    - '\bcnp\b'
+    - 'personal\s*id(entification)?\s*number'
+    - 'персональн.*код'
+  profile_key: documents.id_card_number
 
 id_card:
   keywords:
@@ -679,9 +704,9 @@ email:
     - "email de contact"
     - "reintroduceti adresa de email"
   patterns:
-    - '\be-?mails?\b'
-    - '\be-?mals?\b'
-    - 'adres[aă]?\s*(de\s*)?e-?mails?'
+    - '\be\s*[-]?\s*mails?\b'
+    - '\be\s*[-]?\s*mals?\b'
+    - 'adres[aă]?\s*(de\s*)?e\s*[-]?\s*mails?'
     - 'po[sș]t[aă]\s*electronic[aă]'
     - 'c[aă]su[tț]a\s*po[sș]tal[aă]'
     - 'электронн.*почт'
@@ -731,6 +756,26 @@ phone:
     - 'контактн.*телефон'
     - 'unde\s*v[aă]\s*putem\s*apela'
   profile_key: contacts.phone
+
+preferred_contact_method:
+  keywords:
+    - "metoda preferata de contact"
+    - "modalitatea preferata de contact"
+    - "cum preferati sa fiti contactat"
+    - "preferred contact method"
+    - "preferred method of contact"
+    - "how should we contact you"
+    - "preferred communication channel"
+    - "предпочтительный способ связи"
+    - "способ связи"
+  patterns:
+    - 'metod[aă]\s*preferat[aă]\s*(de\s*)?contact'
+    - 'modalitate[aă]\s*preferat[aă]\s*(de\s*)?contact'
+    - 'preferred\s*(contact\s*method|method\s*of\s*contact)'
+    - 'preferred\s*communication'
+    - 'предпочтительн.*способ.*связ'
+    - 'способ.*связ'
+  profile_key: contacts.email
 
 # ------------------------------------------------------------------------------
 # 7. WORK, CROPS, VISA HISTORY & PREFERENCES

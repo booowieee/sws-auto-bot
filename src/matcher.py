@@ -46,6 +46,10 @@ SEMANTIC_OPTION_MAP = {
     "ucraineana": ["ucraineana", "ucraina", "ucrainean", "украина", "украинское", "украинец"],
     "oricare": ["oricare", "any location", "any", "любая", "любой регион", "все регионы", "kent", "herefordshire", "scotland"],
     "permis": ["da", "yes", "permis", "category b", "categoria b", "водительские права", "есть права", "категория б", "права"],
+    "email": ["email", "e-mail", "e-mailul", "posta", "почта", "электронная почта", "mail"],
+    "telefon": ["telefon", "phone", "apel", "телефон", "звонок", "mobile", "sms", "whatsapp"],
+    "whatsapp": ["whatsapp", "wapp", "ватсап", "what's app"],
+    "telegram": ["telegram", "телеграм", "tg", "тг"],
 }
 
 
@@ -57,10 +61,18 @@ class FieldMatcher:
         "emergency_relationship",
         "emergency_phone",
         "emergency_name",
+        "passport_issuing_authority",
+        "passport_expiry",
+        "passport_issue_date",
+        "passport_number",
         "visa_refusal",
         "no_recruitment_fees",
         "caravan_acceptance",
         "medical_conditions",
+        "email",
+        "preferred_contact_method",
+        "idnp",
+        "id_card_number",
         "address_full",
     )
 
@@ -253,6 +265,18 @@ class FieldMatcher:
 
         target_clean = target_val.lower().strip()
         target_nodiacritics = strip_diacritics(target_clean)
+
+        # Smart choice for contact method (email vs phone vs whatsapp)
+        if "@" in target_clean:
+            for opt in options:
+                opt_nd = strip_diacritics(opt.lower().strip())
+                if any(s in opt_nd for s in ("email", "e-mail", "e mail", "posta", "mail")):
+                    return opt
+        if target_clean.startswith("+") or target_clean.replace(" ", "").replace("-", "").isdigit():
+            for opt in options:
+                opt_nd = strip_diacritics(opt.lower().strip())
+                if any(s in opt_nd for s in ("telefon", "phone", "apel", "mobil", "sms")):
+                    return opt
 
         # Handle numeric scale options (e.g. 1 to 5)
         if all(opt.isdigit() for opt in options):
