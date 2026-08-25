@@ -2252,6 +2252,8 @@ signature:
     - "semnatura digitala"
     - "signature"
     - "digital signature"
+    - "digital signature (type your full name to sign)"
+    - "semnatura electronica"
     - "подпись"
     - "цифровая подпись"
     - "электронная подпись"
@@ -2261,5 +2263,105 @@ signature:
     - 'digital\s*signatur'
     - 'подпись'
     - '(цифров|электронн).*подпись'
-  profile_key: ""
+  profile_key: personal.full_name
+
+today_date:
+  keywords:
+    - "today's date"
+    - "todays date"
+    - "today date"
+    - "data de azi"
+    - "data de astazi"
+    - "data completarii"
+    - "дата заполнения"
+    - "сегодняшняя дата"
+    - "текущая дата"
+    - "date of application"
+    - "application date"
+    - "data aplicarii"
+    - "data semnarii"
+    - "date of signature"
+  patterns:
+    - 'today(\x27s)?\s*date'
+    - 'data\s*(de\s*)?(azi|ast[aă]zi|complet[aă]rii|semn[aă]rii)'
+    - '(сегодняшн|текущ|заполнен).*дат'
+    - 'дат.*заполнен'
+    - 'application\s*date'
+  profile_key: personal.today_date
+
+truthful_declaration:
+  keywords:
+    - "i confirm that all information provided in this form is true"
+    - "all information provided in this form is true"
+    - "confirm ca toate informatiile sunt corecte"
+    - "declar pe propria raspundere ca datele sunt reale"
+    - "подтверждаю достоверность всех предоставленных данных"
+    - "вся информация верна и точна"
+  patterns:
+    - '(i\s*confirm\s*that\s*)?all\s*information.*(true|accurate|correct)'
+    - 'confirm.*informa[tț]i.*(corect|adev[aă]rat|real)'
+    - 'declar\s*pe\s*propria\s*r[aă]spundere'
+    - 'подтверждаю.*(достоверност|правдив|верн)'
+  profile_key: compliance.truthful_declaration
+
+gdpr_consent:
+  keywords:
+    - "i agree to the processing of my personal data in accordance with gdpr"
+    - "agree to the processing of my personal data"
+    - "gdpr regulations"
+    - "prelucrarea datelor cu caracter personal"
+    - "sunt de acord cu prelucrarea datelor"
+    - "согласие на обработку персональных данных"
+    - "согласен на обработку данных"
+  patterns:
+    - '(i\s*agree\s*to\s*the\s*)?processing\s*of\s*(my\s*)?personal\s*data'
+    - 'gdpr'
+    - 'prelucrar.*dat.*personal'
+    - 'обработк.*персональн.*данн'
+  profile_key: compliance.gdpr_consent
+
+false_info_warning:
+  keywords:
+    - "i understand that providing false information may result in the cancellation"
+    - "providing false information"
+    - "furnizarea de informatii false"
+    - "предоставление ложной информации"
+    - "ложные сведения"
+  patterns:
+    - '(i\s*understand\s*that\s*)?(providing\s*)?false\s*information'
+    - 'informa[tț]i.*(false|eronate)'
+    - '(предоставлен|указан).*ложн.*(информац|сведен)'
+  profile_key: compliance.false_info_warning
+
+consent_contact:
+  keywords:
+    - "i consent to being contacted by the recruitment agency via phone, email, or messaging apps"
+    - "i consent to being contacted"
+    - "consent to being contacted"
+    - "consimt sa fiu contactat"
+    - "sunt de acord sa fiu contactat"
+    - "согласен на получение сообщений"
+    - "согласен на связь"
+    - "permission to contact"
+  patterns:
+    - '(i\s*)?consent\s*to\s*(being\s*)?contacted'
+    - 'consimt\s*s[aă]\s*fiu\s*contactat'
+    - 'sunt\s*de\s*acord\s*s[aă]\s*fiu\s*contactat'
+    - 'согласен.*(связ|контакт|сообщен)'
+  profile_key: compliance.consent_contact
+
+terms_agreement:
+  keywords:
+    - "i have read and agree to the following"
+    - "read and agree to the following"
+    - "am citit si sunt de acord cu urmatoarele"
+    - "sunt de acord cu termenii si conditiile"
+    - "я прочитал и согласен со следующим"
+    - "согласен с условиями"
+  patterns:
+    - '(i\s*have\s*)?read\s*and\s*agree'
+    - 'am\s*citit\s*[sș]i\s*sunt\s*de\s*acord'
+    - 'прочитал\s*[иi]\s*согласен'
+  profile_key: compliance.terms_agreement
+
 

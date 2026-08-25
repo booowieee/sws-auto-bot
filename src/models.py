@@ -64,6 +64,8 @@ class PersonalInfo(BaseModel):
     age: str = ""
     age_confirmation: str = ""
     languages_spoken: str = ""
+    today_date: str = ""
+    signature: str = ""
 
 
 class DocumentsInfo(BaseModel):
@@ -168,6 +170,15 @@ class LogisticsInfo(BaseModel):
     has_uk_bank_account: str = "Nu"
 
 
+class ComplianceInfo(BaseModel):
+    truthful_declaration: str = "Da"
+    gdpr_consent: str = "Da"
+    consent_contact: str = "Da"
+    terms_agreement: str = "Da"
+    false_info_warning: str = "Da"
+    signature: str = ""
+
+
 class AboutInfo(BaseModel):
     ro: str = ""
     en: str = ""
@@ -185,6 +196,7 @@ class UserProfile(BaseModel):
     health: HealthInfo = Field(default_factory=HealthInfo)
     ppe: PPEInfo = Field(default_factory=PPEInfo)
     logistics: LogisticsInfo = Field(default_factory=LogisticsInfo)
+    compliance: ComplianceInfo = Field(default_factory=ComplianceInfo)
     about: AboutInfo = Field(default_factory=AboutInfo)
 
 

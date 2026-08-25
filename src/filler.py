@@ -72,10 +72,21 @@ REQUIRED_ERROR_TEXTS = [
 
 SUCCESS_CONFIRMATION_TEXTS = [
     "răspunsul dumneavoastră a fost înregistrat",
+    "raspunsul dumneavoastra a fost inregistrat",
+    "răspunsul dvs. a fost înregistrat",
     "raspunsul dvs. a fost inregistrat",
+    "răspunsul tău a fost înregistrat",
+    "raspunsul tau a fost inregistrat",
     "raspunsul a fost inregistrat",
     "your response has been recorded",
     "ответ записан",
+    "ваш ответ записан",
+    "форма отправлена",
+    "trimite un alt răspuns",
+    "trimite un alt raspuns",
+    "submit another response",
+    "отправить еще один ответ",
+    "отправить ещё один ответ",
 ]
 
 VALIDATION_ERROR_TEXTS = [
@@ -234,9 +245,13 @@ class FormFiller:
         if text is None:
             text = ""
 
-        # Date format text input fallback (e.g. if available_from is text like "Imediat")
-        if field.label and any(d_fmt in field.label.lower() for d_fmt in ("(dd/mm/yyyy)", "(zz/ll/aaaa)", "(дд/мм/гггг)", "dd/mm/yyyy", "zz/ll/aaaa")):
-            if text and not any(char.isdigit() for char in text):
+        # Date format text input fallback
+        lbl_lower = field.label.lower() if field.label else ""
+        if any(d_fmt in lbl_lower for d_fmt in ("today", "azi", "astazi", "сегодня", "data completarii", "дата заполнения")):
+            if not text or text == "None":
+                text = datetime.now().strftime("%d/%m/%Y")
+        elif any(d_fmt in lbl_lower for d_fmt in ("(dd/mm/yyyy)", "(zz/ll/aaaa)", "(дд/мм/гггг)", "dd/mm/yyyy", "zz/ll/aaaa")):
+            if not text or not any(char.isdigit() for char in text):
                 text = "01/05/2025"
 
         container = await self._get_container(field)
@@ -419,9 +434,19 @@ class FormFiller:
                     except Exception:
                         pass
                     return
-            # If no explicit "None" checkbox exists and field is optional, skip gracefully
-            if not field.required:
-                return
+        # If this is an agreement / terms / declarations checkbox container or target is affirmative, select all
+        is_agreement_label = any(kw in (field.label.lower() if field.label else "") for kw in ("agree", "read", "declar", "termeni", "conditii", "terms", "gdpr", "consent", "acord", "соглас", "подтвержд"))
+        if is_agreement_label or target_clean in ("da", "yes", "true", "all", "agree", "de acord", "согласен", "все", "toate"):
+            for i in range(count):
+                cb = checkboxes.nth(i)
+                checked = await cb.get_attribute("aria-checked")
+                if checked != "true":
+                    await cb.scroll_into_view_if_needed()
+                    try:
+                        await cb.click(force=True, timeout=2000)
+                    except Exception:
+                        pass
+            return
 
         # Split comma-separated items if multiple selections
         items_to_match = [s.strip() for s in target_clean.split(",") if s.strip()] if "," in target_clean else [target_clean]
@@ -791,7 +816,18 @@ class FormFiller:
         """
         await asyncio.sleep(2.5)
 
-        # Check for validation errors
+        # 1. Check for any visible validation errors or required question alerts
+        error_locators = self.page.locator('[role="alert"]:visible, .v5Duua:visible, .R2oA3c:visible, div[jsname="B34EJ"]:visible')
+        err_count = await error_locators.count()
+        if err_count > 0:
+            err_texts = []
+            for i in range(err_count):
+                txt = (await error_locators.nth(i).inner_text()).strip()
+                if txt and txt not in err_texts:
+                    err_texts.append(txt)
+            if err_texts:
+                return False, f"Validation errors visible after submit: {err_texts}"
+
         for err_kw in VALIDATION_ERROR_TEXTS:
             err_elem = self.page.get_by_text(err_kw, exact=False)
             if await err_elem.count() > 0:
@@ -799,15 +835,23 @@ class FormFiller:
                     if await err_elem.nth(i).is_visible():
                         return False, f"Validation error visible on page: '{err_kw}'"
 
-        # Check URL change
-        current_url = self.page.url.lower()
-        if "formresponse" in current_url:
-            return True, f"Redirected to formResponse: {current_url}"
-
-        # Check confirmation message
+        # 2. Check confirmation message in page body
         body_text = (await self.page.inner_text("body")).lower()
+        body_text_nd = strip_diacritics(body_text)
         for succ_kw in SUCCESS_CONFIRMATION_TEXTS:
-            if succ_kw in body_text:
+            succ_kw_nd = strip_diacritics(succ_kw.lower())
+            if succ_kw in body_text or succ_kw_nd in body_text_nd:
                 return True, f"Confirmation text detected: '{succ_kw}'"
+
+        # 3. Check URL change ONLY IF no question containers remain on the page
+        current_url = self.page.url.lower()
+        containers = self.page.locator('[role="listitem"]:visible')
+        container_count = await containers.count()
+        if "formresponse" in current_url and container_count == 0:
+            return True, f"Redirected to confirmation page: {current_url}"
+
+        # 4. If question containers are still visible, submission definitely did not complete!
+        if container_count > 0:
+            return False, f"Form still displaying {container_count} question(s) after submit (submission rejected by form)."
 
         return False, "Could not confirm submission status (unknown state)."

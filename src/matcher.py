@@ -57,7 +57,15 @@ class FieldMatcher:
     """Matches Google Form fields against user profile data."""
 
     # Synonym keys that get priority routing before the general matching loop
+    # Synonym keys that get priority routing before the general matching loop
     PRIORITY_KEYS = (
+        "consent_contact",
+        "gdpr_consent",
+        "truthful_declaration",
+        "terms_agreement",
+        "false_info_warning",
+        "today_date",
+        "signature",
         "emergency_email",
         "emergency_relationship",
         "emergency_phone",
@@ -104,26 +112,57 @@ class FieldMatcher:
                         continue
             self._compiled_keywords[syn_key] = compiled
 
+    @staticmethod
+    def _is_type_compatible(syn_key: str, field_type: FieldType) -> bool:
+        """Guards against matching raw text keys (email, phone) to radio/checkbox questions."""
+        if field_type in (FieldType.RADIO, FieldType.CHECKBOX):
+            if syn_key in (
+                "email",
+                "phone",
+                "whatsapp",
+                "viber",
+                "first_name",
+                "last_name",
+                "patronymic",
+                "full_name",
+                "address_full",
+                "address_street",
+                "postal_code",
+                "idnp",
+                "passport_number",
+                "id_card_number",
+                "emergency_phone",
+                "emergency_email",
+                "emergency_name",
+                "date_of_birth",
+                "passport_issue_date",
+                "passport_expiry",
+            ):
+                return False
+        return True
+
     def match_field(self, field: FormField) -> FieldMatch:
         """Matches a form field label to a profile attribute with universal diacritic tolerance."""
         # Normalize text: strip HTML, brackets, negative guidelines, delimiters
         label_clean = normalize_text(field.label)
         raw_clean = re.sub(r"\s+", " ", re.sub(r"[_\-:\*\.,\(\)\/\\]+", " ", field.label.lower())).strip()
 
-        # Step 0: Priority routing for emergency/kin fields
+        # Step 0: Priority routing for emergency/kin/compliance fields
         for pkey in self.PRIORITY_KEYS:
-            if pkey in self.synonyms:
+            if pkey in self.synonyms and self._is_type_compatible(pkey, field.field_type):
                 entry = self.synonyms[pkey]
                 if self._check_regex_patterns(label_clean, entry.patterns) or self._check_regex_patterns(raw_clean, entry.patterns):
                     return self._create_match(field, pkey, MatchMethod.REGEX_PATTERN, CONFIDENCE_PRIORITY)
 
         # Step 1: Compound name prioritization
-        if "full_name" in self.synonyms:
+        if "full_name" in self.synonyms and self._is_type_compatible("full_name", field.field_type):
             if self._check_regex_patterns(label_clean, self.synonyms["full_name"].patterns) or self._check_regex_patterns(raw_clean, self.synonyms["full_name"].patterns):
                 return self._create_match(field, "full_name", MatchMethod.REGEX_PATTERN, CONFIDENCE_PRIORITY)
 
         # Step 2: Regex patterns across all synonym entries
         for syn_key, syn_entry in self.synonyms.items():
+            if not self._is_type_compatible(syn_key, field.field_type):
+                continue
             if self._check_regex_patterns(label_clean, syn_entry.patterns) or self._check_regex_patterns(raw_clean, syn_entry.patterns):
                 return self._create_match(field, syn_key, MatchMethod.REGEX_PATTERN, CONFIDENCE_REGEX)
 
@@ -132,6 +171,8 @@ class FieldMatcher:
         max_keyword_len = 0
 
         for syn_key, compiled_list in self._compiled_keywords.items():
+            if not self._is_type_compatible(syn_key, field.field_type):
+                continue
             for pat, variant in compiled_list:
                 if pat.search(label_clean) or pat.search(raw_clean):
                     if len(variant) > max_keyword_len:
@@ -146,6 +187,8 @@ class FieldMatcher:
         highest_score = 0.0
 
         for syn_key, syn_entry in self.synonyms.items():
+            if not self._is_type_compatible(syn_key, field.field_type):
+                continue
             for kw in syn_entry.keywords:
                 kw_nd = strip_diacritics(kw.lower().strip())
                 score = max(
@@ -284,10 +327,14 @@ class FieldMatcher:
             return "Nu"
         if profile_key == "work.caravan_acceptance" and not current:
             return "Da"
-        if profile_key == "logistics.room_sharing" and not current:
-            return "Da"
         if profile_key in ("logistics.has_uk_bank_account", "documents.has_nino") and not current:
             return "Nu"
+        if profile_key == "personal.today_date":
+            return datetime.now().strftime("%d/%m/%Y")
+        if profile_key in ("personal.signature", "compliance.signature") and not current:
+            return self._resolve_profile_value("personal.full_name") or "JOHN DOE"
+        if profile_key.startswith("compliance.") and not current:
+            return "Da"
 
         return current
 
