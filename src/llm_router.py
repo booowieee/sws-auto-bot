@@ -54,12 +54,25 @@ class LLMRouter:
                     name="Groq",
                     base_url="https://api.groq.com/openai/v1",
                     api_key=groq_key,
-                    model="llama-3.3-70b-versatile",
-                    timeout_seconds=2.5,
+                    model=Config.GROQ_MODEL or "llama-3.3-70b-versatile",
+                    timeout_seconds=3.5,
                 )
             )
 
-        # 3. Standard OpenAI / OpenRouter (Third Tier)
+        # 3. OpenRouter (Multi-model & Free models)
+        openrouter_key = Config.OPENROUTER_API_KEY
+        if openrouter_key:
+            providers.append(
+                LLMProviderConfig(
+                    name="OpenRouter",
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=openrouter_key,
+                    model=Config.OPENROUTER_MODEL or "meta-llama/llama-3.3-70b-instruct:free",
+                    timeout_seconds=5.0,
+                )
+            )
+
+        # 4. Standard OpenAI (Fourth Tier)
         openai_key = Config.OPENAI_API_KEY
         if openai_key:
             providers.append(
@@ -72,7 +85,7 @@ class LLMRouter:
                 )
             )
 
-        # 4. Local Ollama (Offline Local Fallback)
+        # 5. Local Ollama (Offline Local Fallback)
         ollama_url = Config.OLLAMA_BASE_URL
         if ollama_url:
             providers.append(
