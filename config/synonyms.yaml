@@ -1755,6 +1755,7 @@ nino:
     - "national insurance number"
     - "nino"
     - "ni number"
+    - "uk national insurance number (if you have one)"
     - "номер национального страхования"
     - "страховой номер"
   patterns:
@@ -1765,6 +1766,24 @@ nino:
     - 'национальн.*страхован'
     - 'страховой\s*номер'
   profile_key: documents.nino
+
+has_nino:
+  keywords:
+    - "have you previously had a uk national insurance number"
+    - "have you had a national insurance number"
+    - "do you have a national insurance number"
+    - "do you have a nino"
+    - "aveti numar de asigurare nationala"
+    - "ati avut anterior nino"
+    - "есть ли у вас номер национального страхования"
+    - "был ли у вас ранее номер nino"
+    - "ранее имели номер национального страхования"
+  patterns:
+    - 'have\s*(you\s*)?(previously\s*)?had.*(nino|national\s*insurance)'
+    - 'do\s*you\s*have.*(nino|national\s*insurance)'
+    - '(a[tț]i\s*avut|ave[tț]i).*(nino|asigurare\s*na[tț]ional)'
+    - '(есть\s*ли|был\s*ли|ранее\s*имели).*(nino|национальн.*страхован)'
+  profile_key: documents.has_nino
 
 cos_reference:
   keywords:
@@ -2027,6 +2046,23 @@ accommodation_pref:
     - 'предпочтен.*(жиль|проживан)'
     - 'тип\s*проживан'
   profile_key: logistics.accommodation_pref
+
+has_uk_bank_account:
+  keywords:
+    - "do you have a uk bank account"
+    - "have a uk bank account"
+    - "uk bank account"
+    - "aveti cont bancar in uk"
+    - "cont bancar in marea britanie"
+    - "cont bancar uk"
+    - "есть ли у вас банковский счет в uk"
+    - "банковский счет в великобритании"
+    - "банковский счет в uk"
+  patterns:
+    - '(do\s*you\s*have.*|have\s*a\s*)?uk\s*bank\s*account'
+    - 'cont\s*bancar.*(in\s*)?(uk|marea\s*britanie)'
+    - '(есть\s*ли.*)?банковск.*счет.*(в\s*)?(uk|великобритан|англи)'
+  profile_key: logistics.has_uk_bank_account
 
 bank_details:
   keywords:

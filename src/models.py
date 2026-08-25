@@ -74,6 +74,7 @@ class DocumentsInfo(BaseModel):
     id_card_number: str = ""
     brp_number: str = ""
     nino: str = ""
+    has_nino: str = "Nu"
     cos_reference: str = ""
     share_code: str = ""
     tb_certificate: str = ""
@@ -164,6 +165,7 @@ class LogisticsInfo(BaseModel):
     bank_iban: str = ""
     bank_swift: str = ""
     bank_account_name: str = ""
+    has_uk_bank_account: str = "Nu"
 
 
 class AboutInfo(BaseModel):

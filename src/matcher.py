@@ -188,6 +188,11 @@ class FieldMatcher:
         else:
             raw_val = self._resolve_profile_value(profile_key)
 
+        # Fallback for Radio questions mapped to keys with empty string values
+        if field.field_type == FieldType.RADIO and not raw_val:
+            if profile_key in ("documents.nino", "documents.has_nino", "logistics.bank_iban", "logistics.has_uk_bank_account") or syn_key in ("nino", "has_nino", "bank_details", "has_uk_bank_account"):
+                raw_val = "Nu"
+
         selected_option = None
         if field.field_type in (FieldType.RADIO, FieldType.DROPDOWN, FieldType.CHECKBOX) and field.options:
             selected_option = self._resolve_best_option(str(raw_val), field.options)
@@ -281,6 +286,8 @@ class FieldMatcher:
             return "Da"
         if profile_key == "logistics.room_sharing" and not current:
             return "Da"
+        if profile_key in ("logistics.has_uk_bank_account", "documents.has_nino") and not current:
+            return "Nu"
 
         return current
 
