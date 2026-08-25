@@ -145,8 +145,11 @@ class FormFiller:
             else:
                 logger.warning(f"Unsupported field type {field.field_type.value} for '{field.label}'")
         except Exception as e:
-            logger.error(f"Error filling field '{field.label}': {e}")
-            raise
+            if field.required:
+                logger.error(f"Error filling required field '{field.label}': {e}")
+                raise
+            else:
+                logger.warning(f"Error filling optional field '{field.label}': {e}. Continuing.")
 
     async def _get_container(self, field: FormField) -> Locator:
         """Finds the question container by matching heading label, with 1-to-1 index fallback."""
@@ -193,12 +196,30 @@ class FormFiller:
         if locator and await locator.count() > 0:
             target_input = locator.first
             await target_input.scroll_into_view_if_needed()
-            try:
-                await target_input.click(force=True, timeout=2000)
-            except Exception:
-                await target_input.focus()
 
-            await target_input.fill(text)
+            # Check if field is disabled or read-only (conditional questions in Google Forms)
+            try:
+                is_dis = await target_input.is_disabled()
+                aria_dis = (await target_input.get_attribute("aria-disabled") or "").lower() == "true"
+                attr_dis = await target_input.get_attribute("disabled") is not None
+                if is_dis or aria_dis or attr_dis:
+                    logger.info(f"Field [{field.index}] '{field.label}' is disabled/conditional. Skipping.")
+                    return
+            except Exception:
+                pass
+
+            try:
+                await target_input.click(force=True, timeout=1500)
+            except Exception:
+                try:
+                    await target_input.focus()
+                except Exception:
+                    pass
+
+            try:
+                await target_input.fill(text, timeout=3000)
+            except Exception as e:
+                logger.warning(f"Could not fill text into field [{field.index}] '{field.label}': {e}. Skipping.")
         else:
             logger.warning(f"Could not locate text input for field [{field.index}] '{field.label}'")
 

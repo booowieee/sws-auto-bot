@@ -68,9 +68,12 @@ class ExecutionReporter:
             FormStatus.FAILED: "FAILED",
         }.get(report.status, report.status.value.upper())
 
+        safe_url = html.escape(report.url[:120])
+        safe_error = html.escape(report.error_message[:250]) if report.error_message else ""
+
         caption = (
             f"<b>[SWS Auto-Bot] Отчет: {status_text}</b>\n\n"
-            f"<b>URL:</b> <code>{html.escape(report.url)}</code>\n"
+            f"<b>URL:</b> <code>{safe_url}</code>\n"
             f"<b>Статус:</b> {report.status.value}\n"
             f"<b>Время:</b> {report.duration_sec:.1f} сек.\n"
             f"<b>Полей:</b> {len(report.filled_fields)}/{report.total_fields}\n"
@@ -78,11 +81,11 @@ class ExecutionReporter:
 
         if report.unmatched_required_fields:
             caption += f"\n<b>Нераспознанные поля:</b>\n"
-            for f in report.unmatched_required_fields[:5]:
-                caption += f"• <code>{html.escape(str(f))}</code>\n"
+            for f in report.unmatched_required_fields[:4]:
+                caption += f"• <code>{html.escape(str(f)[:60])}</code>\n"
 
-        if report.error_message:
-            caption += f"\n<b>Ошибка:</b> <i>{html.escape(report.error_message)}</i>\n"
+        if safe_error:
+            caption += f"\n<b>Ошибка:</b> <i>{safe_error}</i>\n"
 
         api_url = f"https://api.telegram.org/bot{token}"
 
@@ -96,7 +99,7 @@ class ExecutionReporter:
                         current_caption = caption if idx == 0 else f"Скриншот этапа: {screen_path.name}"
                         form_data = aiohttp.FormData()
                         form_data.add_field("chat_id", str(chat_id))
-                        form_data.add_field("caption", current_caption[:1024])
+                        form_data.add_field("caption", current_caption)
                         form_data.add_field("parse_mode", "HTML")
 
                         photo_bytes = await asyncio.to_thread(screen_path.read_bytes)
