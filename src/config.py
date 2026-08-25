@@ -75,6 +75,16 @@ def ensure_directories() -> None:
     Config.SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     Config.CHROME_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Prune stale leftover screenshot files (> 1 hour old)
+    try:
+        import time as _t
+        now = _t.time()
+        for f in Config.SCREENSHOTS_DIR.glob("*.png"):
+            if f.is_file() and (now - f.stat().st_mtime) > 3600:
+                f.unlink(missing_ok=True)
+    except Exception:
+        pass
+
 
 def load_profile(path: Optional[Path] = None) -> UserProfile:
     target_path = path or Config.PROFILE_PATH

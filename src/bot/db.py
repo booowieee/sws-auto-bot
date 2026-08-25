@@ -168,14 +168,24 @@ class BotDatabase:
                 rows = await cursor.fetchall()
                 return [dict(row) for row in rows]
 
-    async def deactivate_watch_task(self, url: str) -> bool:
-        """Deactivates a watch task by URL."""
+    async def deactivate_watch_task(self, url: str, status: str = "cancelled") -> bool:
+        """Deactivates a watch task by URL with custom final status."""
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
-                "UPDATE watch_tasks SET is_active = 0, status = 'cancelled' WHERE url = ?", (url,)
+                "UPDATE watch_tasks SET is_active = 0, status = ? WHERE url = ?", (status, url)
             )
             await db.commit()
             return cursor.rowcount > 0
+
+    async def get_recent_watch_tasks(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Returns recently completed or inactive watch tasks."""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM watch_tasks WHERE is_active = 0 ORDER BY id DESC LIMIT ?", (limit,)
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(row) for row in rows]
 
     async def update_watch_status(self, url: str, status: str) -> None:
         """Updates status and timestamp for a task."""

@@ -144,6 +144,8 @@ class WatcherManager:
         """Internal worker executing adaptive polling loop for a single form."""
         start_time = time.time()
         backoff_delay = 0.0
+        consecutive_failures = 0
+        max_failures = 3
 
         try:
             while not watcher._stop_event.is_set() and self._is_running:
@@ -164,28 +166,61 @@ class WatcherManager:
                     await self.db.update_watch_status(url, "open")
 
                     # Dispatch alert
-                    await watcher._notify(
-                        f"<b>🚨 [SWS Watcher] FORM OPENED!</b>\n\n"
-                        f"<b>URL:</b> <code>{url}</code>\n"
-                        f"<b>Checks:</b> {self._stats[url]['check_count']}\n"
-                        f"Launching automated form filler..."
-                    )
+                    if consecutive_failures == 0:
+                        await watcher._notify(
+                            f"<b>🚨 [SWS Watcher] FORM OPENED!</b>\n\n"
+                            f"<b>URL:</b> <code>{url}</code>\n"
+                            f"<b>Checks:</b> {self._stats[url]['check_count']}\n"
+                            f"Launching automated form filler..."
+                        )
+                    else:
+                        await watcher._notify(
+                            f"<b>⚠️ [SWS Watcher] Повторная попытка заполнения ({consecutive_failures + 1}/{max_failures})</b>\n\n"
+                            f"<b>URL:</b> <code>{url}</code>"
+                        )
 
                     # Trigger autofill pipeline (locked to prevent concurrent browser sessions)
                     from src.__main__ import run_autofill
                     async with _browser_lock:
                         exit_code = await run_autofill(url=url, is_test=watcher.is_test, headless=True)
-                    status_str = "success" if exit_code == 0 else "failed"
+
+                    if exit_code == 0:
+                        status_str = "success"
+                        self._stats[url]["status"] = status_str
+                        await self.db.update_watch_status(url, status_str)
+                        await self.db.deactivate_watch_task(url, status="completed")
+                        logger.info(f"WatcherManager: Autofill succeeded for {url}. Task completed.")
+                        break
+
+                    consecutive_failures += 1
+                    status_str = "failed"
                     self._stats[url]["status"] = status_str
                     await self.db.update_watch_status(url, status_str)
 
-                    if exit_code == 0:
-                        await self.db.deactivate_watch_task(url)
+                    if consecutive_failures >= max_failures:
+                        logger.error(
+                            f"WatcherManager: Autofill failed {consecutive_failures} consecutive times for {url}. "
+                            "Stopping watcher to prevent endless loop."
+                        )
+                        await self.db.deactivate_watch_task(url, status="failed_needs_manual")
+                        await watcher._notify(
+                            f"<b>❌ [SWS Watcher] АВТОЗАПОЛНЕНИЕ НЕ УДАЛОСЬ</b>\n\n"
+                            f"Форма открыта, но бот не смог завершить отправку после {max_failures} попыток.\n"
+                            f"<b>URL:</b> <code>{url}</code>\n\n"
+                            f"⚠️ Пожалуйста, перейдите по ссылке и заполните форму вручную!"
+                        )
                         break
 
-                    logger.warning(f"WatcherManager: Autofill failed for {url}. Retrying watch loop.")
-                    await asyncio.sleep(max(10, watcher.poll_interval))
-                    continue
+                    cooldown = min(30 * consecutive_failures, 120)
+                    logger.warning(
+                        f"WatcherManager: Autofill failed (attempt {consecutive_failures}/{max_failures}) for {url}. "
+                        f"Backing off for {cooldown}s before retrying."
+                    )
+                    try:
+                        await asyncio.wait_for(watcher._stop_event.wait(), timeout=cooldown)
+                        break
+                    except asyncio.TimeoutError:
+                        continue
 
                 # Sleep with randomized jitter (e.g. ±15% of interval) to avoid robotic cadence
                 jitter = random.uniform(-0.15, 0.15) * watcher.poll_interval

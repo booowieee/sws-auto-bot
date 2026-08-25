@@ -87,26 +87,40 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                 if nav_type == "next" and nav_btn:
                     logger.info(f"Navigating to next section from section #{page_index}...")
                     old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                    
+
                     navigated = False
                     for attempt in range(1, 4):
+                        # Re-locate button dynamically on each attempt to avoid stale element references
+                        curr_nav_btn, curr_nav_type = await filler.find_navigation_button()
+                        if curr_nav_type == "submit":
+                            navigated = True
+                            break
+
+                        target_btn = curr_nav_btn or nav_btn
                         try:
-                            await nav_btn.scroll_into_view_if_needed()
-                            await nav_btn.click(force=True, no_wait_after=True, timeout=5000)
+                            await target_btn.scroll_into_view_if_needed()
+                            await target_btn.click(force=True, no_wait_after=True, timeout=5000)
                         except Exception as e:
                             logger.warning(f"Click on Next button attempt {attempt} failed: {e}. Trying dispatch_event...")
                             try:
-                                await nav_btn.dispatch_event("click")
+                                await target_btn.dispatch_event("click")
                             except Exception:
                                 pass
 
-                        # Polling wait for DOM to transition to next section (up to 3.5s per click attempt)
-                        for _ in range(12):
+                        # Polling wait for DOM to transition to next section (up to 4.5s per click attempt)
+                        for _ in range(15):
                             await asyncio.sleep(0.3)
                             try:
                                 new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
                                 _, btn_type = await filler.find_navigation_button()
-                                if (new_fields and new_fields != old_fields) or btn_type == "submit":
+
+                                # Transition detected if:
+                                # 1. We reached submit button
+                                # 2. Fields on the page changed (different from old section)
+                                if btn_type == "submit":
+                                    navigated = True
+                                    break
+                                if new_fields != old_fields:
                                     navigated = True
                                     break
 
@@ -202,6 +216,8 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
             reporter.save_json_log(report)
             await reporter.send_telegram_report(report)
             return 1
+        finally:
+            reporter._cleanup_local_screenshots()
 
 
 async def run_login_flow() -> None:

@@ -139,22 +139,33 @@ async def cmd_status(message: Message, db: BotDatabase, watcher_mgr: Optional[An
         return
 
     active_tasks = await db.get_active_watch_tasks()
+    recent_tasks = await db.get_recent_watch_tasks(limit=5)
     task_count = len(active_tasks)
 
     status_msg = (
         f"<b>Статус мониторинга:</b>\n\n"
-        f"Активных задач: {task_count}\n"
+        f"🟢 Активных задач: {task_count}\n"
     )
 
     if active_tasks:
-        status_msg += "\n<b>Формы:</b>\n"
+        status_msg += "\n<b>В процессе слежения:</b>\n"
         for t in active_tasks[:10]:
             last_chk = t.get("last_checked_at") or "нет проверок"
             status_msg += (
                 f"• <b>{t['title']}</b>\n"
                 f"  URL: <code>{t['url'][:45]}...</code>\n"
                 f"  Интервал: {t['poll_interval']}с | Режим: {'Тест' if t['is_test'] else 'LIVE'}\n"
-                f"  Посл. проверка: <i>{last_chk[-8:]}</i>\n"
+                f"  Статус: <i>{t.get('status', 'watching')}</i> | Посл. проверка: <i>{last_chk[-8:]}</i>\n"
+            )
+
+    if recent_tasks:
+        status_msg += "\n<b>🏁 Завершенные / Недавние:</b>\n"
+        for t in recent_tasks:
+            st = t.get("status", "inactive")
+            status_emoji = "✅" if st in ("success", "completed") else "❌" if st in ("failed", "failed_needs_manual") else "⏹"
+            status_msg += (
+                f"• {status_emoji} <b>{t['title']}</b> (<i>{st}</i>)\n"
+                f"  URL: <code>{t['url'][:45]}...</code>\n"
             )
 
     await message.answer(
