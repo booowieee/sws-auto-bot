@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 from playwright.async_api import Page, Locator
 
+from rapidfuzz import fuzz
+
 from src.analyzer import FormAnalyzer
 from src.llm_router import LLMRouter
 from src.logger import logger
@@ -191,7 +193,24 @@ class FormFiller:
                     except Exception:
                         pass
 
-        # Pass 3: Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
+            # Pass 3: Fuzzy token set match (handles variations like (caravane) vs tip caravana)
+            best_c = None
+            best_score = 0.0
+            for i in range(count):
+                c = containers.nth(i)
+                heading = c.locator('[role="heading"], .M7eMe').first
+                if await heading.count() > 0:
+                    htext = (await heading.inner_text()).strip().lower()
+                    htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
+                    htext_clean_nd = strip_diacritics(htext_clean)
+                    score = fuzz.token_set_ratio(clean_target_nd, htext_clean_nd)
+                    if score > best_score and score >= 75.0:
+                        best_score = score
+                        best_c = c
+            if best_c is not None:
+                return best_c
+
+        # Pass 4: Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
         if 0 < field.index <= count:
             return containers.nth(field.index - 1)
 
