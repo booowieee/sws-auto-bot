@@ -1951,20 +1951,26 @@ languages_spoken:
 # ------------------------------------------------------------------------------
 previous_uk_employer:
   keywords:
+    - "name of your last uk employer"
+    - "name of last uk employer"
+    - "last uk employer"
+    - "last employer in uk"
+    - "former uk employer"
+    - "previous uk employer"
+    - "previous employer in uk"
+    - "numele ultimului angajator din uk"
+    - "ultimul angajator din uk"
     - "angajator anterior uk"
     - "angajator precedent marea britanie"
-    - "previous uk employer"
-    - "former uk employer"
-    - "previous employer in uk"
+    - "название последнего работодателя в uk"
+    - "последний работодатель в uk"
     - "предыдущий работодатель в великобритании"
     - "прошлый работодатель в uk"
   patterns:
-    - 'angajator\s*(anterior|precedent).*uk'
-    - 'previous\s*(uk\s*)?employer'
-    - 'former\s*(uk\s*)?employer'
+    - '(last|previous|former)\s*(uk\s*)?employer'
     - 'employer.*in\s*(the\s*)?uk'
-    - 'предыдущ.*работодател.*((в|из)\s*)?(uk|великобритан|англи)'
-    - 'прошл.*работодател.*(uk|великобритан)'
+    - '(ultimul|anterior|precedent)\s*angajator'
+    - '(последн|прошл|предыдущ).*работодател.*(uk|великобритан|англи)?'
   profile_key: work.previous_uk_employer
 
 previous_sws_operator:
