@@ -1,4 +1,5 @@
 import asyncio
+import html
 import json
 from datetime import datetime, UTC
 from pathlib import Path
@@ -69,7 +70,7 @@ class ExecutionReporter:
 
         caption = (
             f"<b>[SWS Auto-Bot] Отчет: {status_text}</b>\n\n"
-            f"<b>URL:</b> <code>{report.url}</code>\n"
+            f"<b>URL:</b> <code>{html.escape(report.url)}</code>\n"
             f"<b>Статус:</b> {report.status.value}\n"
             f"<b>Время:</b> {report.duration_sec:.1f} сек.\n"
             f"<b>Полей:</b> {len(report.filled_fields)}/{report.total_fields}\n"
@@ -78,10 +79,10 @@ class ExecutionReporter:
         if report.unmatched_required_fields:
             caption += f"\n<b>Нераспознанные поля:</b>\n"
             for f in report.unmatched_required_fields[:5]:
-                caption += f"• <code>{f}</code>\n"
+                caption += f"• <code>{html.escape(str(f))}</code>\n"
 
         if report.error_message:
-            caption += f"\n<b>Ошибка:</b> <i>{report.error_message}</i>\n"
+            caption += f"\n<b>Ошибка:</b> <i>{html.escape(report.error_message)}</i>\n"
 
         api_url = f"https://api.telegram.org/bot{token}"
 

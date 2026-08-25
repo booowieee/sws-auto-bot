@@ -86,9 +86,21 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                 if nav_type == "next" and nav_btn:
                     logger.info(f"Navigating to next section from section #{page_index}...")
                     old_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                    await nav_btn.click(force=True, timeout=5000)
+                    try:
+                        await nav_btn.scroll_into_view_if_needed()
+                        await nav_btn.click(force=True, no_wait_after=True, timeout=5000)
+                    except Exception as e:
+                        logger.warning(f"Standard click on Next button failed: {e}. Trying dispatch_event...")
+                        try:
+                            await nav_btn.dispatch_event("click")
+                        except Exception:
+                            pass
+
                     await asyncio.sleep(1.5)
-                    await page.wait_for_load_state("networkidle")
+                    try:
+                        await page.wait_for_load_state("domcontentloaded", timeout=5000)
+                    except Exception:
+                        pass
 
                     new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
                     if old_fields == new_fields:

@@ -527,7 +527,14 @@ class FormFiller:
         btn, btn_type = await self.find_navigation_button()
         if btn and btn_type == "submit":
             logger.info("Clicking Submit button...")
-            await btn.click()
+            try:
+                await btn.scroll_into_view_if_needed()
+                await btn.click(force=True, no_wait_after=True, timeout=5000)
+            except Exception:
+                try:
+                    await btn.dispatch_event("click")
+                except Exception:
+                    pass
             return True
 
         # Fallback query for submit
@@ -535,7 +542,14 @@ class FormFiller:
             b = self.page.get_by_role("button", name=s_kw, exact=False)
             if await b.count() > 0:
                 logger.info(f"Clicking Submit button with text '{s_kw}'...")
-                await b.first.click()
+                try:
+                    await b.first.scroll_into_view_if_needed()
+                    await b.first.click(force=True, no_wait_after=True, timeout=5000)
+                except Exception:
+                    try:
+                        await b.first.dispatch_event("click")
+                    except Exception:
+                        pass
                 return True
 
         logger.error("Submit button not found on the page.")
