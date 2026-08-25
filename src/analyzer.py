@@ -45,17 +45,24 @@ class FormAnalyzer:
         """Scans the visible page for Google Form questions."""
         fields: List[FormField] = []
 
-        # Find all question containers
-        containers = await page.query_selector_all('[role="listitem"]')
-        if not containers:
-            containers = await page.query_selector_all('[data-params]')
+        try:
+            # Find all question containers
+            containers = await page.query_selector_all('[role="listitem"]')
+            if not containers:
+                containers = await page.query_selector_all('[data-params]')
 
-        logger.info(f"Found {len(containers)} question containers on current page.")
+            logger.info(f"Found {len(containers)} question containers on current page.")
 
-        for idx, container in enumerate(containers):
-            field = await cls._parse_container(container, idx + 1)
-            if field and field.field_type != FieldType.UNKNOWN:
-                fields.append(field)
+            for idx, container in enumerate(containers):
+                try:
+                    field = await cls._parse_container(container, idx + 1)
+                    if field and field.field_type != FieldType.UNKNOWN:
+                        fields.append(field)
+                except Exception:
+                    continue
+        except Exception as e:
+            logger.debug(f"FormAnalyzer.extract_fields transient error during navigation: {e}")
+            return []
 
         return fields
 

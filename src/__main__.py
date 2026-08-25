@@ -102,15 +102,19 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
                         # Polling wait for DOM to transition to next section (up to 3.5s per click attempt)
                         for _ in range(12):
                             await asyncio.sleep(0.3)
-                            new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
-                            if new_fields != old_fields:
-                                navigated = True
-                                break
+                            try:
+                                new_fields = [f.label for f in await FormAnalyzer.extract_fields(page)]
+                                _, btn_type = await filler.find_navigation_button()
+                                if (new_fields and new_fields != old_fields) or btn_type == "submit":
+                                    navigated = True
+                                    break
 
-                            # Check if validation error is explicitly visible
-                            error_alerts = page.locator('[role="alert"]:visible, .v5Duua:visible, .R2oA3c:visible')
-                            if await error_alerts.count() > 0:
-                                break
+                                # Check if validation error is explicitly visible
+                                error_alerts = page.locator('[role="alert"]:visible, .v5Duua:visible, .R2oA3c:visible')
+                                if await error_alerts.count() > 0:
+                                    break
+                            except Exception:
+                                continue
 
                         if navigated:
                             break
