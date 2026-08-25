@@ -41,7 +41,7 @@ class LLMRouter:
                     name="Google Gemini",
                     base_url="https://generativelanguage.googleapis.com/v1beta/openai",
                     api_key=gemini_key,
-                    model=Config.GEMINI_MODEL or "gemini-3.6-flash",
+                    model=Config.GEMINI_MODEL or "gemini-flash-lite-latest",
                     timeout_seconds=3.0,
                 )
             )
