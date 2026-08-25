@@ -26,12 +26,18 @@ class ExecutionReporter:
         file_path = Config.SCREENSHOTS_DIR / file_name
 
         try:
-            await self.page.screenshot(path=str(file_path), full_page=True)
+            await self.page.screenshot(path=str(file_path), full_page=True, timeout=4000, animations="disabled")
             self.screenshots.append(file_path)
             logger.info(f"Captured screenshot: {file_name}")
             return file_path
         except Exception as e:
-            logger.error(f"Failed to capture screenshot {name}: {e}")
+            logger.warning(f"Could not capture full-page screenshot {name}: {e}. Trying viewport screenshot...")
+            try:
+                await self.page.screenshot(path=str(file_path), full_page=False, timeout=2000, animations="disabled")
+                self.screenshots.append(file_path)
+                return file_path
+            except Exception:
+                pass
             return None
 
     def save_json_log(self, report: ExecutionReport) -> Path:

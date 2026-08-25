@@ -21,11 +21,25 @@ from src.text_utils import normalize_text, strip_diacritics
 
 SUBMIT_BUTTON_TEXTS = [
     "trimite",
+    "trimiteți",
+    "trimiteti",
+    "trimitere",
     "submit",
     "отправить",
+    "отправка",
+    "готово",
     "send",
     "înregistrează",
     "inregistreaza",
+    "înregistrare",
+    "inregistrare",
+    "finalizare",
+    "finalizează",
+    "finalizeaza",
+    "termină",
+    "termina",
+    "completează",
+    "completeaza",
 ]
 
 NEXT_BUTTON_TEXTS = [
@@ -684,6 +698,10 @@ class FormFiller:
             raw_text = (await btn.inner_text()).lower().strip()
             text_nd = strip_diacritics(raw_text)
 
+            # Skip back / clear buttons
+            if any(b_kw in text_nd for b_kw in ("inapoi", "back", "назад", "clear", "sterge", "очистить")):
+                continue
+
             for s_kw in SUBMIT_BUTTON_TEXTS:
                 s_kw_nd = strip_diacritics(s_kw.lower())
                 if s_kw in raw_text or s_kw_nd in text_nd:
@@ -701,24 +719,34 @@ class FormFiller:
         if next_btn:
             return next_btn, "next"
 
+        # Footer fallback: check buttons inside Google Forms footer container .lRwqEb
+        footer_buttons = self.page.locator('.lRwqEb [role="button"], .ThqF7b [role="button"]')
+        f_count = await footer_buttons.count()
+        if f_count > 0:
+            last_btn = footer_buttons.last
+            b_txt = strip_diacritics((await last_btn.inner_text()).lower().strip())
+            if not any(b_kw in b_txt for b_kw in ("inapoi", "back", "назад", "clear", "sterge", "очистить")):
+                return last_btn, "submit"
+
         return None, "none"
 
     async def click_submit(self) -> bool:
         """Finds and clicks the submission button."""
         btn, btn_type = await self.find_navigation_button()
-        if btn and btn_type == "submit":
-            logger.info("Clicking Submit button...")
+        if btn:
+            logger.info(f"Clicking Submit button ({btn_type})...")
             try:
                 await btn.scroll_into_view_if_needed()
                 await btn.click(force=True, no_wait_after=True, timeout=5000)
+                return True
             except Exception:
                 try:
                     await btn.dispatch_event("click")
+                    return True
                 except Exception:
                     pass
-            return True
 
-        # Fallback query for submit
+        # Fallback query for submit text in page
         for s_kw in SUBMIT_BUTTON_TEXTS:
             b = self.page.get_by_role("button", name=s_kw, exact=False)
             if await b.count() > 0:
@@ -726,12 +754,32 @@ class FormFiller:
                 try:
                     await b.first.scroll_into_view_if_needed()
                     await b.first.click(force=True, no_wait_after=True, timeout=5000)
+                    return True
                 except Exception:
                     try:
                         await b.first.dispatch_event("click")
+                        return True
                     except Exception:
                         pass
-                return True
+
+        # Universal footer action fallback: last button in page that is not Back
+        buttons = self.page.locator('[role="button"]:visible')
+        b_count = await buttons.count()
+        for i in reversed(range(b_count)):
+            b = buttons.nth(i)
+            txt = strip_diacritics((await b.inner_text()).lower().strip())
+            if not any(b_kw in txt for b_kw in ("inapoi", "back", "назад", "clear", "sterge", "очистить")):
+                logger.info(f"Clicking last available footer action button (text: '{txt}')...")
+                try:
+                    await b.scroll_into_view_if_needed()
+                    await b.click(force=True, no_wait_after=True, timeout=5000)
+                    return True
+                except Exception:
+                    try:
+                        await b.dispatch_event("click")
+                        return True
+                    except Exception:
+                        pass
 
         logger.error("Submit button not found on the page.")
         return False
