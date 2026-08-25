@@ -58,6 +58,7 @@ class FieldMatcher:
 
     # Synonym keys that get priority routing before the general matching loop
     PRIORITY_KEYS = (
+        "emergency_email",
         "emergency_relationship",
         "emergency_phone",
         "emergency_name",
@@ -264,7 +265,8 @@ class FieldMatcher:
             if full and len(str(full).split()) > 1:
                 return " ".join(str(full).split()[1:])
 
-        # Fallback 5: PPE & Health default values
+        if profile_key == "contacts.emergency_contact.email" and not current:
+            return self._resolve_profile_value("contacts.email") or "user@example.com"
         if profile_key == "ppe.shoe_size" and not current:
             return "42"
         if profile_key == "ppe.glove_size" and not current:

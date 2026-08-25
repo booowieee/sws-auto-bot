@@ -6,6 +6,18 @@
 # ------------------------------------------------------------------------------
 # 1. EMERGENCY CONTACTS & KIN (Must precede generic name / phone)
 # ------------------------------------------------------------------------------
+emergency_email:
+  keywords:
+    - "emergency contact email"
+    - "emergency contact email (optional)"
+    - "email persoana de contact"
+    - "next of kin email"
+    - "email контактного лица"
+  patterns:
+    - 'emergency.*(email|e-mail|mail)'
+    - '(email|e-mail|mail).*urgen[tț]'
+  profile_key: contacts.emergency_contact.email
+
 emergency_name:
   keywords:
     - "persoana de contact in caz de urgenta"
@@ -13,6 +25,7 @@ emergency_name:
     - "emergency contact name"
     - "emergency contact person"
     - "emergency contact person full name"
+    - "emergency contact full name"
     - "emergency contact"
     - "emergency kin"
     - "next of kin"
@@ -25,9 +38,10 @@ emergency_name:
     - "имя родственника для связи"
   patterns:
     - 'persoan[aă]\s*(de\s*)?contact.*urgen[tț]'
-    - 'emergency\s*contact(\s*person|\s*name)?'
+    - '^(?!.*(phone|tel|telef|relat|email|e-mail|mail)).*emergency\s*contact(\s*person|\s*name|\s*full\s*name)?'
+    - 'emergency\s*contact\s*(full\s*)?name'
     - 'emergency\s*kin'
-    - 'next\s*of\s*kin'
+    - 'next\s*of\s*kin(\s*name)?'
     - 'контактн.*лиц.*чс'
     - 'экстренн.*контакт'
     - 'контактн.*лиц'

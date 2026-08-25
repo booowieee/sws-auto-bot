@@ -37,7 +37,7 @@ class Config:
     ACTION_TIMEOUT_MS: int = int(os.getenv("ACTION_TIMEOUT_MS", "10000"))
     NAVIGATION_TIMEOUT_MS: int = int(os.getenv("NAVIGATION_TIMEOUT_MS", "30000"))
     FUZZY_THRESHOLD: float = float(os.getenv("FUZZY_THRESHOLD", "75.0"))
-    MAX_PAGES: int = int(os.getenv("MAX_PAGES", "15"))
+    MAX_PAGES: int = int(os.getenv("MAX_PAGES", "35"))
     DELAY_BETWEEN_FORMS: float = float(os.getenv("DELAY_BETWEEN_FORMS", "1.5"))
 
     VIEWPORT_WIDTH: int = 1920

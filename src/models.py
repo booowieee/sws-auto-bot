@@ -83,6 +83,7 @@ class EmergencyContact(BaseModel):
     name: str = ""
     relationship: str = ""
     phone: str = ""
+    email: str = ""
 
 
 class ContactsInfo(BaseModel):
