@@ -1165,6 +1165,28 @@ physical_condition:
     - 'медицинск.*ограничен'
   profile_key: work.physical_fitness
 
+physical_endurance:
+  keywords:
+    - "can you lift and carry loads of up to 20 kg repeatedly"
+    - "lift and carry loads"
+    - "can you lift and carry"
+    - "lift 20 kg"
+    - "can you stand for 8+ hours continuously"
+    - "stand for 8+ hours"
+    - "stand for 8 hours"
+    - "ridicare greutati 20 kg"
+    - "stat in picioare 8 ore"
+    - "подъем тяжестей 20 кг"
+    - "работа стоя 8 часов"
+  patterns:
+    - 'lift\s*(and\s*carry)?.*(20\s*kg|loads|heavy)'
+    - 'stand.*(8\s*\+?\s*hours|continuously|all\s*day)'
+    - 'ridic.*(20\s*kg|greut[aă][tț]i)'
+    - 'stat.*picioare.*8\s*ore'
+    - 'подъем.*20\s*кг'
+    - 'сто.*8\s*час'
+  profile_key: work.caravan_acceptance
+
 caravan_acceptance:
   keywords:
     - "do you accept caravan / mobile home accommodation"
