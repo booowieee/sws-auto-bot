@@ -26,9 +26,16 @@ class FormAnalyzer:
     @staticmethod
     async def is_form_closed(page: Page) -> Tuple[bool, str]:
         """Checks if the form is currently closed for submissions."""
-        current_url = page.url.lower()
-        if "closedform" in current_url:
-            return True, f"Closed URL detected: {current_url}"
+        from urllib.parse import urlparse
+        parsed = urlparse(page.url.lower())
+
+        # Check path strictly on docs.google.com, avoiding query param false-positives
+        if "docs.google.com" in parsed.netloc and "/closedform" in parsed.path:
+            return True, f"Closed URL detected: {page.url}"
+
+        # If on Google sign-in/accountchooser page, it's an auth prompt, not a closed form
+        if "accounts.google.com" in parsed.netloc:
+            return False, ""
 
         body_text = (await page.inner_text("body")).lower()
         body_nd = strip_diacritics(body_text)

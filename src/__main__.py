@@ -38,8 +38,29 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
         )
 
         try:
-            logger.info(f"Navigating to Google Form: {url}")
-            await page.goto(url, wait_until="networkidle")
+            # Normalize target URL: ensure /viewform endpoint is targeted instead of /closedform
+            target_url = re.sub(r"/closedform(?:\?.*)?$", "/viewform", url)
+            if "/forms/d/e/" in target_url and not target_url.endswith("/viewform") and not target_url.endswith("/formResponse"):
+                if target_url.endswith("/"):
+                    target_url += "viewform"
+                elif not any(target_url.endswith(x) for x in ("/viewform", "/edit", "/preview")):
+                    target_url += "/viewform"
+
+            logger.info(f"Navigating to Google Form: {target_url}")
+            await page.goto(target_url, wait_until="networkidle")
+
+            # Handle Google Account Chooser redirect if triggered
+            if "accounts.google.com" in page.url:
+                logger.info("Google Account Chooser detected. Auto-selecting active signed-in account...")
+                account_elem = page.locator(
+                    '[data-identifier], [data-email], li[jsname], div[role="link"][data-profileindex], div[jsname="rw301b"]'
+                ).first
+                if await account_elem.count() > 0 and await account_elem.is_visible():
+                    await account_elem.click(force=True)
+                    try:
+                        await page.wait_for_load_state("networkidle", timeout=8000)
+                    except Exception:
+                        pass
 
             # Check if form is closed
             is_closed, close_reason = await FormAnalyzer.is_form_closed(page)
