@@ -329,6 +329,25 @@ class FormFiller:
                     continue
 
         if target_input:
+            # [DEBUG-df01] Dump matched element details to diagnose disabled false positives
+            try:
+                tag_name = await target_input.evaluate("el => el.tagName")
+                el_type = await target_input.evaluate("el => el.type || ''")
+                el_class = await target_input.evaluate("el => el.className || ''")
+                el_name = await target_input.evaluate("el => el.name || ''")
+                el_disabled = await target_input.evaluate("el => el.disabled")
+                el_has_attr = await target_input.evaluate("el => el.hasAttribute('disabled')")
+                el_aria_dis = await target_input.evaluate("el => el.getAttribute('aria-disabled') || ''")
+                el_outer = await target_input.evaluate("el => el.outerHTML.substring(0, 200)")
+                logger.info(
+                    f"[DEBUG-df01] Field [{field.index}] '{field.label}': "
+                    f"tag={tag_name} type={el_type} class={el_class!r} name={el_name!r} "
+                    f"disabled={el_disabled} hasAttr={el_has_attr} aria-disabled={el_aria_dis!r} "
+                    f"outerHTML={el_outer!r}"
+                )
+            except Exception as dbg_err:
+                logger.debug(f"[DEBUG-df01] Could not dump element info: {dbg_err}")
+
             try:
                 await target_input.scroll_into_view_if_needed(timeout=3000)
             except Exception as scroll_err:
