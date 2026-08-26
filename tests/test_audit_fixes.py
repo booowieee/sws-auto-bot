@@ -225,3 +225,59 @@ class TestSignatureFallback:
         assert match.matched_key == "signature"
         # Empty profile should produce empty string, NOT "JOHN DOE"
         assert match.resolved_value == ""
+
+
+# ---------------------------------------------------------------------------
+# Motivation vs Experience UK Disambiguation
+# ---------------------------------------------------------------------------
+
+class TestMotivationVsExperienceUK:
+    """Verifies that 'Why work in UK' motivation questions don't falsely match experience_uk ('Nu')."""
+
+    def test_motivation_ro_maps_to_about_ro(self, matcher):
+        field = FormField(
+            index=1,
+            label="De ce doriți să lucrați în Marea Britanie ca muncitor sezonier?",
+            field_type=FieldType.TEXTAREA,
+            required=False,
+        )
+        match = matcher.match_field(field)
+        assert match.matched_key == "why_uk_ro"
+        assert match.profile_key == "about.ro"
+        assert match.resolved_value == matcher.profile.about.ro
+
+    def test_motivation_ru_maps_to_about_ru(self, matcher):
+        field = FormField(
+            index=1,
+            label="Почему вы хотите работать в Великобритании как сезонный работник?",
+            field_type=FieldType.TEXTAREA,
+            required=False,
+        )
+        match = matcher.match_field(field)
+        assert match.matched_key == "why_uk_ru"
+        assert match.profile_key == "about.ru"
+        assert match.resolved_value == matcher.profile.about.ru
+
+    def test_motivation_en_maps_to_about_en(self, matcher):
+        field = FormField(
+            index=1,
+            label="Why do you want to work in the UK as a Seasonal Worker?",
+            field_type=FieldType.TEXTAREA,
+            required=False,
+        )
+        match = matcher.match_field(field)
+        assert match.matched_key == "why_uk_en"
+        assert match.profile_key == "about.en"
+        assert match.resolved_value == matcher.profile.about.en
+
+    def test_previous_uk_experience_still_matches(self, matcher):
+        field = FormField(
+            index=1,
+            label="Ați mai lucrat în UK anterior?",
+            field_type=FieldType.RADIO,
+            required=True,
+            options=["Da", "Nu"],
+        )
+        match = matcher.match_field(field)
+        assert match.matched_key == "experience_uk"
+        assert match.resolved_value == "Nu"

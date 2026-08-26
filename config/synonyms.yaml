@@ -831,28 +831,69 @@ preferred_contact_method:
 # ------------------------------------------------------------------------------
 experience_uk:
   keywords:
-    - "lucrat in uk"
-    - "worked in uk"
-    - "работал в англии"
-    - "работали в великобритании"
-    - "были в англии"
-    - "fost in uk"
-    - "marea britanie"
+    - "ati mai lucrat in uk"
+    - "ati lucrat anterior in uk"
+    - "lucrat anterior in uk"
+    - "experienta anterioara in uk"
     - "ai mai lucrat in uk"
-    - "held a uk visa"
-    - "held a uk sws visa"
-    - "worked in the uk before"
-    - "visited the uk"
     - "ati mai fost in anglia"
     - "ati mai fost sau ati lucrat in uk"
+    - "worked in uk before"
+    - "worked in the uk before"
+    - "previously worked in uk"
+    - "previous uk work experience"
+    - "held a uk visa"
+    - "held a uk sws visa"
+    - "ранее работали в великобритании"
+    - "работали ли в великобритании ранее"
+    - "были ли в англии ранее"
   patterns:
-    - '(lucrat|fost|mers).*(uk|anglia|britanie)'
-    - 'worked.*(uk|britain)'
+    - '^(?!.*(de\s*ce|why|почему|dori[tț]i|want|хотите|motiv)).*(anterior|mai\s*fost|mai\s*lucrat|precedent|before|previously|history|ранее|раньше).*(uk|anglia|britani|великобрит)'
+    - '^(?!.*(de\s*ce|why|почему|dori[tț]i|want|хотите|motiv)).*(uk|anglia|britani|великобрит).*(anterior|precedent|before|previously|ранее|раньше)'
     - 'held.*uk\s*visa'
-    - 'visited.*uk'
-    - 'работал.*(англи|великобрит)'
-    - 'были.*(англи|великобрит)'
+    - '^(?!.*(de\s*ce|why|почему|dori[tț]i|want|хотите|motiv)).*ati\s*mai\s*(fost|lucrat).*uk'
+    - '^(?!.*(de\s*ce|why|почему|dori[tț]i|want|хотите|motiv)).*(ранее|раньше)\s*работали.*(англи|великобрит)'
   profile_key: work.experience_uk_text
+
+why_uk_en:
+  keywords:
+    - "why do you want to work in the uk as a seasonal worker"
+    - "why do you want to work in the uk"
+    - "why do you want to work in uk"
+    - "reason for applying"
+    - "motivation for seasonal work"
+    - "motivation for working in uk"
+  patterns:
+    - 'why\s*(do\s*)?you\s*want\s*to\s*work.*(uk|britain|seasonal)'
+    - 'motivation.*(uk|seasonal|work)'
+    - 'reason\s*for\s*apply'
+  profile_key: about.en
+
+why_uk_ro:
+  keywords:
+    - "de ce doriti sa lucrati in marea britanie ca muncitor sezonier"
+    - "de ce doriti sa lucrati in marea britanie"
+    - "de ce doriti sa lucrati in uk"
+    - "motivatia de a lucra in uk"
+    - "motivul pentru care aplicati"
+  patterns:
+    - 'de\s*ce\s*dori[tț]i\s*s[aă]\s*lucra[tț]i.*(marea\s*britanie|uk|anglia|sezonier)'
+    - 'motiva[tț]ia.*(uk|muncitor|sezonier|marea\s*britanie)'
+    - 'motivul.*aplica'
+  profile_key: about.ro
+
+why_uk_ru:
+  keywords:
+    - "почему вы хотите работать в великобритании как сезонный работник"
+    - "почему вы хотите работать в великобритании"
+    - "почему хотите работать в uk"
+    - "мотивация для работы в великобритании"
+    - "причина подачи заявки"
+  patterns:
+    - 'почему\s*(вы\s*)?хотите\s*работать.*(великобритан|uk|англи|сезонн)'
+    - 'мотивац.*(великобритан|uk|сезонн|работ)'
+    - 'причин.*подач.*заявк'
+  profile_key: about.ru
 
 visa_refusal:
   keywords:
