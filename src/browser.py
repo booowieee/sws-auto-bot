@@ -56,53 +56,63 @@ class BrowserManager:
 
         self._playwright = await async_playwright().start()
 
-        # Use system Chrome for login flow to bypass Google's "unsafe browser" block.
-        # Playwright's bundled Chromium has a different build signature that Google
-        # fingerprints and rejects at the login page.
-        channel = "chrome" if self.use_system_chrome else None
-        browser_label = "Chrome (system)" if channel else "Chromium (Playwright)"
-
-        logger.info(
-            f"Launching {browser_label} (headless={self.headless}, profile_dir={self.user_data_dir})"
-        )
-
-        launch_kwargs = dict(
-            user_data_dir=str(self.user_data_dir),
-            headless=self.headless,
-            args=CHROMIUM_ARGS,
-            user_agent=Config.USER_AGENT,
-            viewport={"width": Config.VIEWPORT_WIDTH, "height": Config.VIEWPORT_HEIGHT},
-            locale="en-US",
-            timezone_id=Config.TIMEZONE,
-            permissions=["geolocation"],
-            ignore_https_errors=True,
-            # Suppress Playwright's --enable-automation flag that Google detects
-            ignore_default_args=["--enable-automation"],
-        )
-        if channel:
-            launch_kwargs["channel"] = channel
-
-        self._context = await self._playwright.chromium.launch_persistent_context(**launch_kwargs)
+        if self.use_system_chrome:
+            # LOGIN MODE: Completely clean system Chrome launch.
+            # Google's login page cross-checks user-agent, navigator properties,
+            # Chrome build signature, and automation flags against its fingerprint DB.
+            # ANY modification triggers "This browser or app may not be secure".
+            # Solution: launch real Chrome with zero Playwright contamination.
+            logger.info(
+                f"Launching system Chrome (clean mode) for Google login (profile_dir={self.user_data_dir})"
+            )
+            self._context = await self._playwright.chromium.launch_persistent_context(
+                user_data_dir=str(self.user_data_dir),
+                channel="chrome",
+                headless=False,
+                args=["--no-sandbox", "--disable-infobars"],
+                ignore_default_args=["--enable-automation"],
+                # No custom user_agent, viewport, locale, timezone — let Chrome use its own defaults
+            )
+        else:
+            # FORM-FILLING MODE: Playwright Chromium with stealth hardening.
+            # Google Forms doesn't run the same aggressive bot detection as the login page.
+            logger.info(
+                f"Launching Chromium (headless={self.headless}, profile_dir={self.user_data_dir})"
+            )
+            self._context = await self._playwright.chromium.launch_persistent_context(
+                user_data_dir=str(self.user_data_dir),
+                headless=self.headless,
+                args=CHROMIUM_ARGS,
+                user_agent=Config.USER_AGENT,
+                viewport={"width": Config.VIEWPORT_WIDTH, "height": Config.VIEWPORT_HEIGHT},
+                locale="en-US",
+                timezone_id=Config.TIMEZONE,
+                permissions=["geolocation"],
+                ignore_https_errors=True,
+                ignore_default_args=["--enable-automation"],
+            )
 
         page = self._context.pages[0] if self._context.pages else await self._context.new_page()
 
-        # Anti-detection stealth script injection
-        await page.add_init_script(
-            """
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-            window.chrome = {
-                runtime: {}
-            };
-            Object.defineProperty(navigator, 'plugins', {
-                get: () => [1, 2, 3, 4, 5]
-            });
-            Object.defineProperty(navigator, 'languages', {
-                get: () => ['en-US', 'en', 'ro', 'ru']
-            });
-            """
-        )
+        # Only inject stealth scripts in form-filling mode.
+        # In login mode, these modifications are themselves detectable by Google.
+        if not self.use_system_chrome:
+            await page.add_init_script(
+                """
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+                window.chrome = {
+                    runtime: {}
+                };
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5]
+                });
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en', 'ro', 'ru']
+                });
+                """
+            )
 
         page.set_default_timeout(Config.ACTION_TIMEOUT_MS)
         page.set_default_navigation_timeout(Config.NAVIGATION_TIMEOUT_MS)
