@@ -51,6 +51,18 @@ class FormAnalyzer:
             if not containers:
                 containers = await page.query_selector_all('[data-params]')
 
+            # Filter to only visible containers (Google Forms keeps old section
+            # containers in the DOM after SPA transitions)
+            visible_containers = []
+            for c in containers:
+                try:
+                    bbox = await c.bounding_box()
+                    if bbox and bbox["height"] > 0:
+                        visible_containers.append(c)
+                except Exception:
+                    continue
+            containers = visible_containers
+
             logger.info(f"Found {len(containers)} question containers on current page.")
 
             for idx, container in enumerate(containers):

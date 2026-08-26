@@ -107,7 +107,16 @@ class FormFiller:
 
     async def fill_current_section(self) -> Tuple[List[FieldMatch], List[FormField]]:
         """Extracts visible fields, matches against profile, executes LLM fallback if needed, and fills them."""
+        # Brief wait for Google Forms SPA transition to settle (section slide animation ~300ms)
+        await asyncio.sleep(0.5)
+
         fields = await FormAnalyzer.extract_fields(self.page)
+
+        # If no fields found, wait a bit longer and retry (slow DOM transitions)
+        if not fields:
+            await asyncio.sleep(1.0)
+            fields = await FormAnalyzer.extract_fields(self.page)
+
         matches = self.matcher.match_all(fields)
 
         # Tier 2: LLM Fallback with Semantic Caching for unmapped fields
@@ -172,18 +181,23 @@ class FormFiller:
             else:
                 logger.warning(f"Unsupported field type {field.field_type.value} for '{field.label}'")
         except Exception as e:
+            # Log and continue instead of crashing the entire run.
+            # Google Forms validation will catch unfilled required fields at submit time.
             if field.required:
-                logger.error(f"Error filling required field '{field.label}': {e}")
-                raise
+                logger.error(f"Error filling required field '{field.label}': {e}. Will continue with remaining fields.")
             else:
                 logger.warning(f"Error filling optional field '{field.label}': {e}. Continuing.")
 
     async def _get_container(self, field: FormField) -> Locator:
-        """Finds the question container by matching heading label, with 1-to-1 index fallback."""
-        containers = self.page.locator('[role="listitem"]')
+        """Finds the question container by matching heading label, with 1-to-1 index fallback.
+        
+        Only queries VISIBLE containers to avoid matching stale elements from
+        previous sections in Google Forms' SPA-style DOM transitions.
+        """
+        containers = self.page.locator('[role="listitem"]:visible')
         count = await containers.count()
         if count == 0:
-            containers = self.page.locator('[data-params]')
+            containers = self.page.locator('[data-params]:visible')
             count = await containers.count()
 
         if count == 0:
@@ -274,7 +288,25 @@ class FormFiller:
 
         if locator and await locator.count() > 0:
             target_input = locator.first
-            await target_input.scroll_into_view_if_needed()
+
+            # Guard: verify the input element is actually visible before interacting
+            try:
+                if not await target_input.is_visible():
+                    logger.warning(
+                        f"Field [{field.index}] '{field.label}': input element exists but is not visible. "
+                        "Likely a stale container from a previous section. Skipping."
+                    )
+                    return
+            except Exception:
+                pass
+
+            try:
+                await target_input.scroll_into_view_if_needed(timeout=3000)
+            except Exception as scroll_err:
+                logger.warning(
+                    f"Field [{field.index}] '{field.label}': scroll_into_view failed ({scroll_err}). "
+                    "Attempting direct interaction."
+                )
 
             # Check if field is disabled or read-only (conditional questions in Google Forms)
             try:
