@@ -10,6 +10,12 @@ def setup_logger(name: str = "sws_auto_bot", level: int = logging.INFO) -> loggi
     logger.setLevel(level)
 
     if not logger.handlers:
+        if hasattr(sys.stdout, "reconfigure"):
+            try:
+                sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
         formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)

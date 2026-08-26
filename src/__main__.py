@@ -263,20 +263,21 @@ async def run_login_flow() -> None:
         return
 
     profile_dir = str(Config.CHROME_PROFILE_DIR.resolve())
-    login_url = "https://accounts.google.com/"
+    login_url = "https://docs.google.com/forms"
 
     logger.info(f"Launching standalone Chrome (no automation framework)")
     logger.info(f"Profile directory: {profile_dir}")
-    logger.info(f"Log in to your Google Account, then close the browser window.")
+    logger.info(f"Log in to your Google Account on the Google Forms page, then close the browser window.")
 
     import subprocess
     cmd = [
         chrome_path,
         f"--user-data-dir={profile_dir}",
+        "--profile-directory=Default",
         "--no-first-run",
         "--no-default-browser-check",
         "--disable-default-apps",
-        login_url,
+        f"--app={login_url}",
     ]
 
     try:

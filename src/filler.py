@@ -29,17 +29,11 @@ SUBMIT_BUTTON_TEXTS = [
     "отправка",
     "готово",
     "send",
-    "înregistrează",
-    "inregistreaza",
-    "înregistrare",
-    "inregistrare",
     "finalizare",
     "finalizează",
     "finalizeaza",
     "termină",
     "termina",
-    "completează",
-    "completeaza",
 ]
 
 NEXT_BUTTON_TEXTS = [
@@ -223,7 +217,11 @@ class FormFiller:
                     if aria_checked != "true":
                         logger.info("Found Google Account email recording checkbox. Auto-checking...")
                         await cb.scroll_into_view_if_needed()
-                        await cb.click(force=True, timeout=2000)
+                        await cb.focus()
+                        await self.page.keyboard.press("Space")
+                        await asyncio.sleep(0.3)
+                        if (await cb.get_attribute("aria-checked") or "").lower() != "true":
+                            await cb.click(force=True, timeout=2000)
                         logger.info("Google Account email recording checkbox checked.")
         except Exception as e:
             logger.debug(f"Google Account email checkbox check notice: {e}")
@@ -365,32 +363,17 @@ class FormFiller:
                     continue
 
         if target_input:
-            # Google Forms hydration: input.whsOnd fields start with disabled=""
-            # and aria-disabled="true" while JS initializes, then JS removes them.
-            # Wait for THIS specific element to become enabled (up to 5s).
+            # Clean any internal Google Forms disabled/aria-disabled states on container and inputs
             try:
-                still_disabled = await target_input.evaluate("el => el.hasAttribute('disabled')")
-                if still_disabled:
-                    logger.debug(f"Field [{field.index}] '{field.label}': input still disabled, waiting for JS hydration...")
-                    await target_input.evaluate("""el => new Promise((resolve, reject) => {
-                        if (!el.hasAttribute('disabled')) { resolve(); return; }
-                        const observer = new MutationObserver(() => {
-                            if (!el.hasAttribute('disabled')) {
-                                observer.disconnect();
-                                resolve();
-                            }
-                        });
-                        observer.observe(el, { attributes: true, attributeFilter: ['disabled'] });
-                        setTimeout(() => { observer.disconnect(); resolve(); }, 5000);
-                    })""")
-                    # After waiting, check once more
-                    still_disabled = await target_input.evaluate("el => el.hasAttribute('disabled')")
-                    if still_disabled:
-                        logger.warning(f"Field [{field.index}] '{field.label}': input remained disabled after 5s wait. Skipping.")
-                        return
-                    logger.debug(f"Field [{field.index}] '{field.label}': input is now enabled after hydration wait.")
-            except Exception as e:
-                logger.debug(f"Field [{field.index}] '{field.label}': hydration wait error: {e}. Proceeding anyway.")
+                await container.evaluate("""el => {
+                    el.removeAttribute('aria-disabled');
+                    el.querySelectorAll('*').forEach(e => {
+                        e.removeAttribute('disabled');
+                        e.removeAttribute('aria-disabled');
+                    });
+                }""")
+            except Exception:
+                pass
 
             try:
                 await target_input.scroll_into_view_if_needed(timeout=3000)
@@ -405,10 +388,24 @@ class FormFiller:
                 except Exception:
                     pass
 
+            filled = False
             try:
-                await target_input.fill(text, timeout=3000)
-            except Exception as e:
-                logger.warning(f"Could not fill text into field [{field.index}] '{field.label}': {e}. Skipping.")
+                await target_input.fill(text, timeout=2000)
+                filled = True
+            except Exception:
+                pass
+
+            if not filled:
+                try:
+                    await target_input.evaluate("""(el, val) => {
+                        el.focus();
+                        el.value = val;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        el.blur();
+                    }""", text)
+                except Exception as e:
+                    logger.warning(f"Could not fill text into field [{field.index}] '{field.label}': {e}. Skipping.")
         else:
             logger.warning(f"Could not locate text input for field [{field.index}] '{field.label}'")
 
