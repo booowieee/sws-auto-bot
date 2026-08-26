@@ -221,11 +221,15 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
 
 
 async def run_login_flow() -> None:
-    """Launches headed browser for one-time manual Google authentication."""
+    """Launches headed browser for one-time manual Google authentication.
+    
+    Uses system Chrome (channel='chrome') instead of Playwright's bundled Chromium
+    to bypass Google's 'This browser or app may not be secure' block.
+    """
     ensure_directories()
-    browser_mgr = BrowserManager(headless=False)
+    browser_mgr = BrowserManager(headless=False, use_system_chrome=True)
 
-    logger.info("Opening browser for manual Google sign-in...")
+    logger.info("Opening system Chrome for manual Google sign-in...")
     logger.info("Log in to your Google Account. Once done, close the browser window.")
 
     async with browser_mgr as (context, page):

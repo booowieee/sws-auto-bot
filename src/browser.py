@@ -38,9 +38,15 @@ def clean_profile_locks(profile_dir: Path) -> None:
 class BrowserManager:
     """Manages Playwright lifecycle, persistent context and anti-bot evasions."""
 
-    def __init__(self, headless: Optional[bool] = None, user_data_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        headless: Optional[bool] = None,
+        user_data_dir: Optional[Path] = None,
+        use_system_chrome: bool = False,
+    ):
         self.headless = Config.HEADLESS if headless is None else headless
         self.user_data_dir = user_data_dir or Config.CHROME_PROFILE_DIR
+        self.use_system_chrome = use_system_chrome
         self._playwright: Optional[Playwright] = None
         self._context: Optional[BrowserContext] = None
 
@@ -50,11 +56,17 @@ class BrowserManager:
 
         self._playwright = await async_playwright().start()
 
+        # Use system Chrome for login flow to bypass Google's "unsafe browser" block.
+        # Playwright's bundled Chromium has a different build signature that Google
+        # fingerprints and rejects at the login page.
+        channel = "chrome" if self.use_system_chrome else None
+        browser_label = "Chrome (system)" if channel else "Chromium (Playwright)"
+
         logger.info(
-            f"Launching Chromium (headless={self.headless}, profile_dir={self.user_data_dir})"
+            f"Launching {browser_label} (headless={self.headless}, profile_dir={self.user_data_dir})"
         )
 
-        self._context = await self._playwright.chromium.launch_persistent_context(
+        launch_kwargs = dict(
             user_data_dir=str(self.user_data_dir),
             headless=self.headless,
             args=CHROMIUM_ARGS,
@@ -64,7 +76,13 @@ class BrowserManager:
             timezone_id=Config.TIMEZONE,
             permissions=["geolocation"],
             ignore_https_errors=True,
+            # Suppress Playwright's --enable-automation flag that Google detects
+            ignore_default_args=["--enable-automation"],
         )
+        if channel:
+            launch_kwargs["channel"] = channel
+
+        self._context = await self._playwright.chromium.launch_persistent_context(**launch_kwargs)
 
         page = self._context.pages[0] if self._context.pages else await self._context.new_page()
 
