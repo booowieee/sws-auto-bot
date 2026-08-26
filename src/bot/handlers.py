@@ -98,6 +98,7 @@ async def cmd_start(message: Message, db: BotDatabase):
         "• <code>/watch &lt;url&gt; [сек]</code> - запустить слежение\n"
         "• <code>/unwatch &lt;url&gt;</code> - остановить слежение\n"
         "• <code>/fill &lt;url&gt; [--test]</code> - заполнить форму сейчас\n"
+        "• <code>/session</code> - статус Google сессии\n"
         "• <code>/profile</code> - данные профиля\n"
         "• <code>/logs</code> - отчеты\n"
         "• <code>/whitelist</code> - управление доступом\n"
@@ -122,7 +123,8 @@ async def cmd_help(message: Message, db: BotDatabase):
         "<b>Заполнение вручную:</b>\n"
         "• <code>/fill &lt;url&gt;</code> - боевое заполнение (отправка)\n"
         "• <code>/fill &lt;url&gt; --test</code> - тест (без отправки)\n\n"
-        "<b>Информация:</b>\n"
+        "<b>Информация и сессия:</b>\n"
+        "• <code>/session</code> - проверить авторизацию Google аккаунта\n"
         "• <code>/profile</code> - данные профиля кандидата\n"
         "• <code>/logs</code> - последние отчеты выполнения\n\n"
         "<b>Управление доступом:</b>\n"
@@ -308,6 +310,38 @@ async def cmd_profile(message: Message, db: BotDatabase):
         await message.answer(p_text, parse_mode="HTML")
     except Exception as e:
         await message.answer(f"❌ Не удалось загрузить профиль: {e}")
+
+
+@router.message(Command("session"))
+async def cmd_session(message: Message, db: BotDatabase):
+    if not await check_access(message, db):
+        return
+
+    status_msg = await message.answer("🔍 Проверка авторизации Google аккаунта в Chrome профиле...", parse_mode="HTML")
+    try:
+        from src.watcher_manager import _browser_lock
+        async with _browser_lock:
+            browser_mgr = BrowserManager(headless=True)
+            async with browser_mgr as (context, page):
+                is_active = await BrowserManager.check_google_session(page)
+
+        if is_active:
+            await status_msg.edit_text(
+                "✅ <b>Google сессия активна!</b>\n\n"
+                "Браузер успешно авторизован в Google аккаунте. Формы будут отправляться от вашего имени.",
+                parse_mode="HTML",
+            )
+        else:
+            await status_msg.edit_text(
+                "⚠️ <b>Google сессия не авторизована!</b>\n\n"
+                "Браузер не залогинен в Google. Чтобы авторизоваться:\n"
+                "1. Запустите локально: <code>python -m src.__main__ --login</code>\n"
+                "2. Войдите в Google аккаунт и закройте браузер.\n"
+                "3. Скопируйте папку <code>data/chrome_profile</code> на сервер.",
+                parse_mode="HTML",
+            )
+    except Exception as e:
+        await status_msg.edit_text(f"❌ Ошибка проверки сессии: {e}", parse_mode="HTML")
 
 
 @router.message(Command("logs"))

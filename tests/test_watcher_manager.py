@@ -60,7 +60,19 @@ def test_watcher_manager_stop_all(manager):
                 await manager.start_watching(url=u, poll_interval=10, is_test=True)
 
             assert len(manager._tasks) == 2
-            await manager.stop_all()
+            await manager.stop_all(deactivate_db=False)
             assert len(manager._tasks) == 0
+
+            # Verify tasks are preserved in DB
+            active_tasks = await manager.db.get_active_watch_tasks()
+            assert len(active_tasks) == 2
+
+            # Verify initialize resumes them
+            new_manager = WatcherManager(db=manager.db)
+            await new_manager.initialize()
+            assert len(new_manager._tasks) == 2
+
+            # Cleanup
+            await new_manager.stop_all(deactivate_db=True)
 
     asyncio.run(_test())

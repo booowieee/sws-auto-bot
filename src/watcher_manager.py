@@ -103,8 +103,8 @@ class WatcherManager:
         logger.info(f"WatcherManager: Started background watching for '{title}' ({url})")
         return 1
 
-    async def stop_watching(self, url: str) -> bool:
-        """Stops watching a form URL and updates database."""
+    async def stop_watching(self, url: str, deactivate_db: bool = True) -> bool:
+        """Stops watching a form URL and optionally updates database."""
         if url in self._watchers:
             self._watchers[url].stop()
 
@@ -123,18 +123,21 @@ class WatcherManager:
         if url in self._stats:
             self._stats[url]["status"] = "cancelled"
 
-        await self.db.deactivate_watch_task(url)
-        logger.info(f"WatcherManager: Stopped watching URL: {url}")
+        if deactivate_db:
+            await self.db.deactivate_watch_task(url)
+            logger.info(f"WatcherManager: Stopped watching URL: {url} (deactivated from DB)")
+        else:
+            logger.info(f"WatcherManager: In-memory task stopped for URL: {url} (preserved in DB for auto-resume)")
         return True
 
-    async def stop_all(self) -> None:
-        """Gracefully cancels all running watch tasks."""
+    async def stop_all(self, deactivate_db: bool = False) -> None:
+        """Gracefully cancels all running in-memory watch tasks without deactivating in DB on shutdown."""
         self._is_running = False
         urls = list(self._tasks.keys())
         for url in urls:
-            await self.stop_watching(url)
+            await self.stop_watching(url, deactivate_db=deactivate_db)
         self._tasks.clear()
-        logger.info("WatcherManager: All watch tasks stopped.")
+        logger.info("WatcherManager: All in-memory watch tasks stopped.")
 
     def get_task_stats(self) -> List[Dict[str, Any]]:
         """Returns live metrics for all registered tasks."""
