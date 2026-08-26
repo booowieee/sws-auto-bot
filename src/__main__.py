@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import time
 from datetime import datetime, UTC
@@ -221,26 +222,95 @@ async def run_autofill(url: str, is_test: bool = False, headless: Optional[bool]
 
 
 async def run_login_flow() -> None:
-    """Launches headed browser for one-time manual Google authentication.
-    
-    Uses system Chrome (channel='chrome') instead of Playwright's bundled Chromium
-    to bypass Google's 'This browser or app may not be secure' block.
+    """Launches a standalone Chrome process for manual Google authentication.
+
+    Google detects Chrome DevTools Protocol (CDP) connections that Playwright uses,
+    regardless of channel, user-agent, or stealth settings. The only reliable way
+    to log in is to launch Chrome as a normal subprocess without any automation
+    framework attached. Cookies are saved to the persistent profile directory and
+    reused by Playwright for headless form filling.
     """
     ensure_directories()
-    browser_mgr = BrowserManager(headless=False, use_system_chrome=True)
 
-    logger.info("Opening system Chrome for manual Google sign-in...")
-    logger.info("Log in to your Google Account. Once done, close the browser window.")
+    chrome_path = _find_chrome_executable()
+    if not chrome_path:
+        logger.error(
+            "System Chrome not found. Please install Google Chrome or set CHROME_PATH env var.\n"
+            "Download: https://www.google.com/chrome/"
+        )
+        return
 
-    async with browser_mgr as (context, page):
-        await page.goto("https://accounts.google.com/", wait_until="domcontentloaded")
-        try:
-            while not page.is_closed():
-                await asyncio.sleep(1)
-        except Exception:
-            logger.debug("Browser window closed during login flow.")
+    profile_dir = str(Config.CHROME_PROFILE_DIR.resolve())
+    login_url = "https://accounts.google.com/"
 
-    logger.info("Google authentication session saved to persistent profile.")
+    logger.info(f"Launching standalone Chrome (no automation framework)")
+    logger.info(f"Profile directory: {profile_dir}")
+    logger.info(f"Log in to your Google Account, then close the browser window.")
+
+    import subprocess
+    cmd = [
+        chrome_path,
+        f"--user-data-dir={profile_dir}",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-default-apps",
+        login_url,
+    ]
+
+    try:
+        proc = subprocess.Popen(cmd)
+        proc.wait()  # Block until user closes Chrome
+    except FileNotFoundError:
+        logger.error(f"Chrome executable not found at: {chrome_path}")
+        return
+    except KeyboardInterrupt:
+        logger.info("Login flow interrupted by user.")
+        return
+
+    logger.info("Chrome closed. Google session saved to persistent profile.")
+    logger.info("To verify: python -m src.__main__ --check-session")
+
+
+def _find_chrome_executable() -> Optional[str]:
+    """Locates the system Chrome/Chromium executable."""
+    import shutil
+    import platform
+
+    # 1. Check CHROME_PATH environment variable
+    env_path = os.environ.get("CHROME_PATH")
+    if env_path and Path(env_path).is_file():
+        return env_path
+
+    # 2. Check PATH
+    for name in ("google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser"):
+        found = shutil.which(name)
+        if found:
+            return found
+
+    # 3. Platform-specific common paths
+    system = platform.system()
+    candidates = []
+
+    if system == "Windows":
+        for base in (os.environ.get("PROGRAMFILES", ""), os.environ.get("PROGRAMFILES(X86)", ""), os.environ.get("LOCALAPPDATA", "")):
+            if base:
+                candidates.append(Path(base) / "Google" / "Chrome" / "Application" / "chrome.exe")
+    elif system == "Darwin":
+        candidates.append(Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"))
+    else:  # Linux
+        candidates.extend([
+            Path("/usr/bin/google-chrome"),
+            Path("/usr/bin/google-chrome-stable"),
+            Path("/usr/bin/chromium"),
+            Path("/usr/bin/chromium-browser"),
+            Path("/snap/bin/chromium"),
+        ])
+
+    for p in candidates:
+        if p.is_file():
+            return str(p)
+
+    return None
 
 
 async def run_session_check() -> int:
