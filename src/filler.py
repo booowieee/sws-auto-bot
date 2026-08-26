@@ -107,8 +107,12 @@ class FormFiller:
 
     async def fill_current_section(self) -> Tuple[List[FieldMatch], List[FormField]]:
         """Extracts visible fields, matches against profile, executes LLM fallback if needed, and fills them."""
-        # Brief wait for Google Forms SPA transition to settle (section slide animation ~300ms)
-        await asyncio.sleep(0.5)
+        # Wait for Google Forms JS to finish initialization.
+        # Google Forms renders input.whsOnd elements with disabled="" and aria-disabled="true"
+        # during its SPA hydration phase.  The JS removes these attributes once the form is
+        # interactive (~0.5-3s depending on network/CPU).  We poll until at least one enabled
+        # text input appears, with a 10s hard timeout.
+        await self._wait_for_form_interactive()
 
         # Auto-check Google Account email recording checkbox if present on page
         await self._handle_google_account_email_checkbox()
@@ -161,6 +165,34 @@ class FormFiller:
             await asyncio.sleep(random.uniform(0.25, 0.65))
 
         return matches, unmatched_required
+
+    async def _wait_for_form_interactive(self, timeout_ms: int = 10000) -> None:
+        """Wait for Google Forms JS hydration to complete.
+
+        Google Forms initially renders all input.whsOnd text inputs with
+        disabled="" and aria-disabled="true".  After the SPA JS initializes
+        (~0.5-3s), it removes these attributes, making the fields interactive.
+
+        This method uses Playwright's wait_for_selector to efficiently wait
+        for at least one enabled text input.  If the current section has no
+        text inputs (radio-only), we fall back to a 2s wait for the SPA
+        transition animation.
+        """
+        try:
+            await self.page.wait_for_selector(
+                'input.whsOnd:not([disabled]), textarea.KHxj8b:not([disabled])',
+                state='visible',
+                timeout=timeout_ms,
+            )
+            logger.debug("Google Forms JS hydration complete — inputs are interactive.")
+        except Exception:
+            # Section might have only radio/checkbox/dropdown fields (no text inputs).
+            # Fall back to a generous static wait for the SPA transition.
+            logger.debug(
+                "No enabled text input found within timeout — section may lack text fields. "
+                "Falling back to 2s wait."
+            )
+            await asyncio.sleep(2.0)
 
     async def _handle_google_account_email_checkbox(self) -> None:
         """
@@ -329,43 +361,35 @@ class FormFiller:
                     continue
 
         if target_input:
-            # [DEBUG-df01] Dump matched element details to diagnose disabled false positives
+            # Google Forms hydration: input.whsOnd fields start with disabled=""
+            # and aria-disabled="true" while JS initializes, then JS removes them.
+            # Wait for THIS specific element to become enabled (up to 5s).
             try:
-                tag_name = await target_input.evaluate("el => el.tagName")
-                el_type = await target_input.evaluate("el => el.type || ''")
-                el_class = await target_input.evaluate("el => el.className || ''")
-                el_name = await target_input.evaluate("el => el.name || ''")
-                el_disabled = await target_input.evaluate("el => el.disabled")
-                el_has_attr = await target_input.evaluate("el => el.hasAttribute('disabled')")
-                el_aria_dis = await target_input.evaluate("el => el.getAttribute('aria-disabled') || ''")
-                el_outer = await target_input.evaluate("el => el.outerHTML.substring(0, 200)")
-                logger.info(
-                    f"[DEBUG-df01] Field [{field.index}] '{field.label}': "
-                    f"tag={tag_name} type={el_type} class={el_class!r} name={el_name!r} "
-                    f"disabled={el_disabled} hasAttr={el_has_attr} aria-disabled={el_aria_dis!r} "
-                    f"outerHTML={el_outer!r}"
-                )
-            except Exception as dbg_err:
-                logger.debug(f"[DEBUG-df01] Could not dump element info: {dbg_err}")
+                still_disabled = await target_input.evaluate("el => el.hasAttribute('disabled')")
+                if still_disabled:
+                    logger.debug(f"Field [{field.index}] '{field.label}': input still disabled, waiting for JS hydration...")
+                    await target_input.evaluate("""el => new Promise((resolve, reject) => {
+                        if (!el.hasAttribute('disabled')) { resolve(); return; }
+                        const observer = new MutationObserver(() => {
+                            if (!el.hasAttribute('disabled')) {
+                                observer.disconnect();
+                                resolve();
+                            }
+                        });
+                        observer.observe(el, { attributes: true, attributeFilter: ['disabled'] });
+                        setTimeout(() => { observer.disconnect(); resolve(); }, 5000);
+                    })""")
+                    # After waiting, check once more
+                    still_disabled = await target_input.evaluate("el => el.hasAttribute('disabled')")
+                    if still_disabled:
+                        logger.warning(f"Field [{field.index}] '{field.label}': input remained disabled after 5s wait. Skipping.")
+                        return
+                    logger.debug(f"Field [{field.index}] '{field.label}': input is now enabled after hydration wait.")
+            except Exception as e:
+                logger.debug(f"Field [{field.index}] '{field.label}': hydration wait error: {e}. Proceeding anyway.")
 
             try:
                 await target_input.scroll_into_view_if_needed(timeout=3000)
-            except Exception as scroll_err:
-                logger.warning(
-                    f"Field [{field.index}] '{field.label}': scroll_into_view failed ({scroll_err}). "
-                    "Attempting direct interaction."
-                )
-
-            # Check if element itself has the 'disabled' attribute directly.
-            # NOTE: Do NOT use Playwright's is_disabled() here — it walks ancestor
-            # elements checking for aria-disabled="true" and <fieldset disabled>,
-            # which Google Forms sets on question wrappers even when the input is
-            # fully interactive.  We only care about the element's own attribute.
-            try:
-                has_disabled_attr = await target_input.get_attribute("disabled")
-                if has_disabled_attr is not None:
-                    logger.info(f"Field [{field.index}] '{field.label}' has disabled attribute. Skipping.")
-                    return
             except Exception:
                 pass
 
