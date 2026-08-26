@@ -337,10 +337,15 @@ class FormFiller:
                     "Attempting direct interaction."
                 )
 
-            # Check if actually disabled
+            # Check if element itself has the 'disabled' attribute directly.
+            # NOTE: Do NOT use Playwright's is_disabled() here — it walks ancestor
+            # elements checking for aria-disabled="true" and <fieldset disabled>,
+            # which Google Forms sets on question wrappers even when the input is
+            # fully interactive.  We only care about the element's own attribute.
             try:
-                if await target_input.is_disabled():
-                    logger.info(f"Field [{field.index}] '{field.label}' is disabled. Skipping.")
+                has_disabled_attr = await target_input.get_attribute("disabled")
+                if has_disabled_attr is not None:
+                    logger.info(f"Field [{field.index}] '{field.label}' has disabled attribute. Skipping.")
                     return
             except Exception:
                 pass
