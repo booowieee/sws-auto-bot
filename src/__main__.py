@@ -268,6 +268,16 @@ async def run_login_flow() -> None:
         return
 
     logger.info("Chrome closed. Google session saved to persistent profile.")
+
+    # Automatically export cross-platform storage_state.json
+    try:
+        browser_mgr = BrowserManager(headless=True)
+        async with browser_mgr as (context, page):
+            await context.storage_state(path=str(Config.STORAGE_STATE_FILE))
+            logger.info(f"Cross-platform session exported to: {Config.STORAGE_STATE_FILE}")
+    except Exception as e:
+        logger.debug(f"Could not auto-export storage state: {e}")
+
     logger.info("To verify: python -m src.__main__ --check-session")
 
 

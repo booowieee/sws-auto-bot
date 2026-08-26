@@ -30,6 +30,12 @@ class Config:
     if not CHROME_PROFILE_DIR.is_absolute():
         CHROME_PROFILE_DIR = PROJECT_ROOT / CHROME_PROFILE_DIR
 
+    STORAGE_STATE_FILE: Path = Path(
+        os.getenv("STORAGE_STATE_FILE", str(DATA_DIR / "storage_state.json"))
+    )
+    if not STORAGE_STATE_FILE.is_absolute():
+        STORAGE_STATE_FILE = PROJECT_ROOT / STORAGE_STATE_FILE
+
     TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
     TELEGRAM_CHAT_ID: Optional[str] = os.getenv("TELEGRAM_CHAT_ID")
 

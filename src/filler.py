@@ -107,15 +107,19 @@ class FormFiller:
 
     async def fill_current_section(self) -> Tuple[List[FieldMatch], List[FormField]]:
         """Extracts visible fields, matches against profile, executes LLM fallback if needed, and fills them."""
-        # Wait for Google Forms JS to finish initialization.
-        # Google Forms renders input.whsOnd elements with disabled="" and aria-disabled="true"
-        # during its SPA hydration phase.  The JS removes these attributes once the form is
-        # interactive (~0.5-3s depending on network/CPU).  We poll until at least one enabled
-        # text input appears, with a 10s hard timeout.
-        await self._wait_for_form_interactive()
+        # Brief initial wait for the SPA page transition animation to settle.
+        await asyncio.sleep(0.5)
 
-        # Auto-check Google Account email recording checkbox if present on page
+        # When the form owner enables "Collect email addresses (Verified)",
+        # Google Forms shows an email consent checkbox and keeps ALL other
+        # fields disabled until the user checks it.  We MUST handle this
+        # checkbox BEFORE waiting for fields to become interactive.
         await self._handle_google_account_email_checkbox()
+
+        # Now wait for Google Forms JS to enable the input fields.
+        # After the consent checkbox is checked (or if no consent is needed),
+        # Google Forms removes disabled/aria-disabled from input.whsOnd elements.
+        await self._wait_for_form_interactive()
 
         fields = await FormAnalyzer.extract_fields(self.page)
 

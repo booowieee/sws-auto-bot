@@ -92,6 +92,19 @@ class BrowserManager:
                 ignore_default_args=["--enable-automation"],
             )
 
+        # Cross-platform session restore: if storage_state.json exists, inject cookies
+        if Config.STORAGE_STATE_FILE.exists():
+            try:
+                import json
+                with open(Config.STORAGE_STATE_FILE, "r", encoding="utf-8") as f:
+                    state_data = json.load(f)
+                    cookies = state_data.get("cookies", [])
+                    if cookies:
+                        await self._context.add_cookies(cookies)
+                        logger.info(f"Loaded {len(cookies)} cookies from {Config.STORAGE_STATE_FILE.name}")
+            except Exception as e:
+                logger.warning(f"Could not load cookies from {Config.STORAGE_STATE_FILE.name}: {e}")
+
         page = self._context.pages[0] if self._context.pages else await self._context.new_page()
 
         # Only inject stealth scripts in form-filling mode.
@@ -153,6 +166,14 @@ class BrowserManager:
                         return False
 
             logger.info("Google Account is actively authenticated.")
+
+            # Automatically export / refresh storage_state.json
+            try:
+                await page.context.storage_state(path=str(Config.STORAGE_STATE_FILE))
+                logger.debug(f"Saved active storage state to {Config.STORAGE_STATE_FILE.name}")
+            except Exception as e:
+                logger.debug(f"Could not save storage state: {e}")
+
             return True
         except Exception:
             logger.exception("Failed to check Google session status")
