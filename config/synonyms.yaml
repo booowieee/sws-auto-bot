@@ -2345,6 +2345,24 @@ truthful_declaration:
     - 'подтверждаю.*(достоверност|правдив|верн)'
   profile_key: compliance.truthful_declaration
 
+google_email_record_consent:
+  keywords:
+    - "indica in raspunsul meu adresa de e-mail"
+    - "inregistreaza adresa de e-mail care va fi inclusa in raspuns"
+    - "inregistreaza ca adresa de e-mail"
+    - "record email to be included with my response"
+    - "record as the email to be included with my response"
+    - "указать в моем ответе адрес электронной почты"
+    - "записать как адрес который будет отправлен вместе с ответом"
+    - "включить адрес электронной почты в ответ"
+  patterns:
+    - '[iî]nregistreaz[aă].*adres.*e\s*[-]?\s*mail'
+    - 'record.*(email|e-mail).*included'
+    - 'указать.*адрес.*электронн.*почт'
+    - 'записать.*адрес.*отправлен'
+    - 'включить.*адрес.*почт'
+  profile_key: compliance.truthful_declaration
+
 gdpr_consent:
   keywords:
     - "i agree to the processing of my personal data in accordance with gdpr"

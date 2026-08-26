@@ -110,6 +110,9 @@ class FormFiller:
         # Brief wait for Google Forms SPA transition to settle (section slide animation ~300ms)
         await asyncio.sleep(0.5)
 
+        # Auto-check Google Account email recording checkbox if present on page
+        await self._handle_google_account_email_checkbox()
+
         fields = await FormAnalyzer.extract_fields(self.page)
 
         # If no fields found, wait a bit longer and retry (slow DOM transitions)
@@ -159,23 +162,51 @@ class FormFiller:
 
         return matches, unmatched_required
 
+    async def _handle_google_account_email_checkbox(self) -> None:
+        """
+        When logged into a Google Account, Google Forms injects an email recording checkbox:
+        'Record user@gmail.com as the email to be included with my response' /
+        'Указать в моем ответе адрес электронной почты...' /
+        'Înregistrează ... ca adresă de e-mail care va fi inclusă în răspuns'.
+        This method ensures it is always checked.
+        """
+        try:
+            email_cbs = self.page.locator(
+                '[role="checkbox"][aria-label*="mail" i], '
+                '[role="checkbox"][aria-label*="почт" i], '
+                '[role="checkbox"][aria-label*="record" i], '
+                '[role="checkbox"][aria-label*="указать" i], '
+                '[role="checkbox"][aria-label*="înregistrează" i], '
+                '[role="checkbox"][aria-label*="inregistreaza" i]'
+            )
+            count = await email_cbs.count()
+            for i in range(count):
+                cb = email_cbs.nth(i)
+                if await cb.is_visible():
+                    aria_checked = (await cb.get_attribute("aria-checked") or "").lower()
+                    if aria_checked != "true":
+                        logger.info("Found Google Account email recording checkbox. Auto-checking...")
+                        await cb.scroll_into_view_if_needed()
+                        await cb.click(force=True, timeout=2000)
+                        logger.info("Google Account email recording checkbox checked.")
+        except Exception as e:
+            logger.debug(f"Google Account email checkbox check notice: {e}")
+
     async def _fill_field(self, match: FieldMatch) -> None:
         field = match.field
         value = str(match.resolved_value or "")
 
-        logger.info(
-            f"Filling field [{field.index}] '{field.label}' (Type: {field.field_type.value}) -> '{value}'"
-        )
-
         try:
+            logger.info(f"Filling field [{field.index}] '{field.label}' (Type: {field.field_type.value}) -> '{value}'")
+
             if field.field_type in (FieldType.TEXT, FieldType.TEXTAREA):
                 await self._type_text(field, value)
             elif field.field_type == FieldType.RADIO:
-                await self._select_radio(field, match.selected_option or value)
+                await self._select_radio(field, value)
             elif field.field_type == FieldType.CHECKBOX:
-                await self._select_checkbox(field, match.selected_option or value)
+                await self._select_checkbox(field, value)
             elif field.field_type == FieldType.DROPDOWN:
-                await self._select_dropdown(field, match.selected_option or value)
+                await self._select_dropdown(field, value)
             elif field.field_type == FieldType.DATE:
                 await self._fill_date(field, value)
             else:
@@ -218,50 +249,30 @@ class FormFiller:
                     if clean_target == htext_clean or clean_target_nd == htext_clean_nd:
                         return c
 
-            # Pass 2: Word boundary regex match
-            for i in range(count):
-                c = containers.nth(i)
-                heading = c.locator('[role="heading"], .M7eMe').first
-                if await heading.count() > 0:
-                    htext = (await heading.inner_text()).strip().lower()
-                    htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
-                    htext_clean_nd = strip_diacritics(htext_clean)
-                    try:
-                        if re.search(r'\b' + re.escape(clean_target_nd) + r'\b', htext_clean_nd):
+            # Pass 2: Word boundary regex / substring match (only if label is distinctive, >= 4 chars)
+            if len(clean_target_nd) >= 4:
+                for i in range(count):
+                    c = containers.nth(i)
+                    heading = c.locator('[role="heading"], .M7eMe').first
+                    if await heading.count() > 0:
+                        htext = (await heading.inner_text()).strip().lower()
+                        htext_clean_nd = strip_diacritics(re.sub(r"[\*\n\r\t]+", " ", htext).strip())
+                        if clean_target_nd in htext_clean_nd or htext_clean_nd in clean_target_nd:
                             return c
-                    except Exception:
-                        pass
 
-            # Pass 3: Fuzzy token set match (handles variations like (caravane) vs tip caravana)
-            best_c = None
-            best_score = 0.0
-            for i in range(count):
-                c = containers.nth(i)
-                heading = c.locator('[role="heading"], .M7eMe').first
-                if await heading.count() > 0:
-                    htext = (await heading.inner_text()).strip().lower()
-                    htext_clean = re.sub(r"[\*\n\r\t]+", " ", htext).strip()
-                    htext_clean_nd = strip_diacritics(htext_clean)
-                    score = fuzz.token_set_ratio(clean_target_nd, htext_clean_nd)
-                    if score > best_score and score >= 75.0:
-                        best_score = score
-                        best_c = c
-            if best_c is not None:
-                return best_c
-
-        # Pass 4: Fallback to exact 1-to-1 index (aligned with FormAnalyzer.extract_fields)
+        # Pass 3: 1-to-1 index fallback within visible containers
         if 0 < field.index <= count:
             return containers.nth(field.index - 1)
 
         return containers.first
 
     async def _type_text(self, field: FormField, text: str) -> None:
-        if text is None:
-            text = ""
+        if not text:
+            return
 
-        # Date format text input fallback
-        lbl_lower = field.label.lower() if field.label else ""
+        lbl_lower = field.label.lower()
         lbl_lower_nd = strip_diacritics(lbl_lower)
+
         # Today-date keywords with word boundaries to avoid "azi" matching "finalizare"
         today_patterns = (
             r"\btoday\b", r"\bazi\b", r"\bastazi\b", r"\bсегодня\b",
@@ -278,28 +289,46 @@ class FormFiller:
                 text = (datetime.now() + timedelta(days=90)).strftime("%d/%m/%Y")
 
         container = await self._get_container(field)
-        locator = None
+        target_input = None
 
-        if field.entry_id:
-            locator = self.page.locator(f'input[name="{field.entry_id}"], textarea[name="{field.entry_id}"]')
+        # 1. Locate the VISIBLE interactive text input/textarea strictly inside the container
+        for sel in (
+            'input.whsOnd',
+            'textarea.KHxj8b',
+            'input[type="text"]',
+            'input[type="email"]',
+            'input[type="tel"]',
+            'input[type="number"]',
+            'textarea',
+            'input:not([type]):not([type="hidden"])',
+        ):
+            loc = container.locator(sel)
+            count = await loc.count()
+            for i in range(count):
+                el = loc.nth(i)
+                try:
+                    if await el.is_visible():
+                        target_input = el
+                        break
+                except Exception:
+                    continue
+            if target_input:
+                break
 
-        if not locator or await locator.count() == 0:
-            locator = container.locator('input[type="text"], input:not([type]), textarea')
+        # 2. Fallback: if not found by class/type, check entry_id inside container
+        if not target_input and field.entry_id:
+            loc = container.locator(f'input[name="{field.entry_id}"], textarea[name="{field.entry_id}"]')
+            count = await loc.count()
+            for i in range(count):
+                el = loc.nth(i)
+                try:
+                    if await el.is_visible():
+                        target_input = el
+                        break
+                except Exception:
+                    continue
 
-        if locator and await locator.count() > 0:
-            target_input = locator.first
-
-            # Guard: verify the input element is actually visible before interacting
-            try:
-                if not await target_input.is_visible():
-                    logger.warning(
-                        f"Field [{field.index}] '{field.label}': input element exists but is not visible. "
-                        "Likely a stale container from a previous section. Skipping."
-                    )
-                    return
-            except Exception:
-                pass
-
+        if target_input:
             try:
                 await target_input.scroll_into_view_if_needed(timeout=3000)
             except Exception as scroll_err:
@@ -308,13 +337,10 @@ class FormFiller:
                     "Attempting direct interaction."
                 )
 
-            # Check if field is disabled or read-only (conditional questions in Google Forms)
+            # Check if actually disabled
             try:
-                is_dis = await target_input.is_disabled()
-                aria_dis = (await target_input.get_attribute("aria-disabled") or "").lower() == "true"
-                attr_dis = await target_input.get_attribute("disabled") is not None
-                if is_dis or aria_dis or attr_dis:
-                    logger.info(f"Field [{field.index}] '{field.label}' is disabled/conditional. Skipping.")
+                if await target_input.is_disabled():
+                    logger.info(f"Field [{field.index}] '{field.label}' is disabled. Skipping.")
                     return
             except Exception:
                 pass
