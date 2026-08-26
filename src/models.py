@@ -157,6 +157,8 @@ class WorkInfo(BaseModel):
     driving_license_categories: str = "Category B (Car)"
     can_ride_bicycle: str = "Da"
     can_swim: str = "Da"
+    willing_overtime: str = "Da"
+    overtime_acceptance: str = "Da"
 
 
 class LogisticsInfo(BaseModel):

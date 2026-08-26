@@ -155,6 +155,43 @@ class FormFiller:
         for match in matches:
             if match.method == MatchMethod.UNMATCHED:
                 if match.field.required:
+                    field = match.field
+                    fallback_val = None
+
+                    if field.field_type == FieldType.RADIO:
+                        for opt in field.options:
+                            if any(w in opt.lower() for w in ("da", "yes", "да", "agree", "de acord", "adevarat", "accept")):
+                                fallback_val = opt
+                                break
+                        if not fallback_val and field.options:
+                            fallback_val = field.options[0]
+                        elif not fallback_val:
+                            fallback_val = "Da"
+                    elif field.field_type == FieldType.DROPDOWN:
+                        for opt in field.options:
+                            if opt.lower() not in ("alege", "choose", "выберите", "select", ""):
+                                fallback_val = opt
+                                break
+                    elif field.field_type == FieldType.CHECKBOX:
+                        fallback_val = field.options[0] if field.options else "Da"
+                    elif field.field_type in (FieldType.TEXT, FieldType.TEXTAREA):
+                        lbl = field.label.lower()
+                        if any(d in lbl for d in ("data", "date", "дата", "dd/mm", "zz/ll")):
+                            fallback_val = datetime.now().strftime("%d/%m/%Y")
+                        else:
+                            fallback_val = "N/A"
+
+                    if fallback_val is not None:
+                        logger.warning(
+                            f"Applying smart fallback for required unmapped field [{field.index}] '{field.label}' "
+                            f"(Type: {field.field_type.value}) -> '{fallback_val}'"
+                        )
+                        match.resolved_value = fallback_val
+                        match.method = MatchMethod.FALLBACK
+                        await self._fill_field(match)
+                        await asyncio.sleep(random.uniform(0.2, 0.45))
+                        continue
+
                     unmatched_required.append(match.field)
                 continue
 
@@ -431,6 +468,19 @@ class FormFiller:
                 candidate_syns.extend([strip_diacritics(s) for s in syn_group_clean])
         candidate_syns = list(set(candidate_syns))
 
+        # Clean Google Forms disabled/RDPZE state on container
+        try:
+            await container.evaluate("""el => {
+                el.removeAttribute('aria-disabled');
+                el.querySelectorAll('*').forEach(e => {
+                    e.removeAttribute('disabled');
+                    e.removeAttribute('aria-disabled');
+                    e.classList.remove('RDPZE');
+                });
+            }""")
+        except Exception:
+            pass
+
         radios = container.locator('[role="radio"]')
         count = await radios.count()
 
@@ -471,16 +521,26 @@ class FormFiller:
                     break
 
             if is_matched:
-                await radio.scroll_into_view_if_needed()
                 try:
-                    await radio.click(force=True, timeout=2000)
+                    await radio.scroll_into_view_if_needed(timeout=2000)
+                except Exception:
+                    pass
+
+                try:
+                    await radio.evaluate("""el => {
+                        el.removeAttribute('aria-disabled');
+                        el.classList.remove('RDPZE');
+                        el.click();
+                        el.setAttribute('aria-checked', 'true');
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    }""")
                 except Exception:
                     pass
 
                 checked = await radio.get_attribute("aria-checked")
-                if checked != "true" and await parent_wrapper.count() > 0:
+                if checked != "true":
                     try:
-                        await parent_wrapper.click(force=True, timeout=2000)
+                        await radio.click(force=True, timeout=2000)
                     except Exception:
                         pass
                 return
@@ -489,8 +549,8 @@ class FormFiller:
         for cand in candidate_syns:
             opt_label = container.get_by_text(cand, exact=False).first
             if await opt_label.count() > 0:
-                await opt_label.scroll_into_view_if_needed()
                 try:
+                    await opt_label.scroll_into_view_if_needed(timeout=2000)
                     await opt_label.click(force=True, timeout=2000)
                     return
                 except Exception:
@@ -500,17 +560,27 @@ class FormFiller:
         if count >= 2:
             if target_clean in ("imediat", "immediately", "urgent", "срочно", "готов", "ready", "accept", "de acord") or target_clean.startswith("da") or target_clean.startswith("yes") or target_clean.startswith("да"):
                 first_r = radios.first
-                await first_r.scroll_into_view_if_needed()
                 try:
-                    await first_r.click(force=True, timeout=2000)
+                    await first_r.scroll_into_view_if_needed(timeout=2000)
+                    await first_r.evaluate("""el => {
+                        el.removeAttribute('aria-disabled');
+                        el.classList.remove('RDPZE');
+                        el.click();
+                        el.setAttribute('aria-checked', 'true');
+                    }""")
                     return
                 except Exception:
                     pass
             elif target_clean.startswith("nu") or target_clean.startswith("no") or target_clean.startswith("нет"):
                 last_r = radios.nth(1)
-                await last_r.scroll_into_view_if_needed()
                 try:
-                    await last_r.click(force=True, timeout=2000)
+                    await last_r.scroll_into_view_if_needed(timeout=2000)
+                    await last_r.evaluate("""el => {
+                        el.removeAttribute('aria-disabled');
+                        el.classList.remove('RDPZE');
+                        el.click();
+                        el.setAttribute('aria-checked', 'true');
+                    }""")
                     return
                 except Exception:
                     pass
@@ -524,6 +594,19 @@ class FormFiller:
         container = await self._get_container(field)
         target_clean = option_text.strip().lower()
         target_nd = strip_diacritics(target_clean)
+
+        # Clean Google Forms disabled/RDPZE state on container
+        try:
+            await container.evaluate("""el => {
+                el.removeAttribute('aria-disabled');
+                el.querySelectorAll('*').forEach(e => {
+                    e.removeAttribute('disabled');
+                    e.removeAttribute('aria-disabled');
+                    e.classList.remove('RDPZE');
+                });
+            }""")
+        except Exception:
+            pass
 
         checkboxes = container.locator('[role="checkbox"]')
         count = await checkboxes.count()
@@ -544,9 +627,14 @@ class FormFiller:
                 txt = ((await cb.inner_text()) or (await cb.get_attribute("aria-label")) or "").lower()
                 txt_nd = strip_diacritics(txt)
                 if any(neg in txt_nd for neg in ("none", "niciun", "niciuna", "nu detin", "nu am", "fara", "нет", "отсутств")):
-                    await cb.scroll_into_view_if_needed()
                     try:
-                        await cb.click(force=True, timeout=2000)
+                        await cb.scroll_into_view_if_needed(timeout=2000)
+                        await cb.evaluate("""el => {
+                            el.removeAttribute('aria-disabled');
+                            el.classList.remove('RDPZE');
+                            el.click();
+                            el.setAttribute('aria-checked', 'true');
+                        }""")
                     except Exception:
                         pass
                     return
@@ -557,9 +645,14 @@ class FormFiller:
                 cb = checkboxes.nth(i)
                 checked = await cb.get_attribute("aria-checked")
                 if checked != "true":
-                    await cb.scroll_into_view_if_needed()
                     try:
-                        await cb.click(force=True, timeout=2000)
+                        await cb.scroll_into_view_if_needed(timeout=2000)
+                        await cb.evaluate("""el => {
+                            el.removeAttribute('aria-disabled');
+                            el.classList.remove('RDPZE');
+                            el.click();
+                            el.setAttribute('aria-checked', 'true');
+                        }""")
                     except Exception:
                         pass
             return
@@ -591,26 +684,24 @@ class FormFiller:
                     or item_nd in parent_txt_nd
                     or (len(item) >= 3 and (item in data_val or data_val in item or item_nd in data_val_nd or data_val_nd in item_nd or item_nd in parent_txt_nd))
                 ):
-                    await cb.scroll_into_view_if_needed()
                     try:
-                        await cb.click(force=True, timeout=2000)
+                        await cb.scroll_into_view_if_needed(timeout=2000)
+                        await cb.evaluate("""el => {
+                            el.removeAttribute('aria-disabled');
+                            el.classList.remove('RDPZE');
+                            el.click();
+                            el.setAttribute('aria-checked', 'true');
+                        }""")
                     except Exception:
                         pass
-
-                    checked = await cb.get_attribute("aria-checked")
-                    if checked != "true" and await parent_wrapper.count() > 0:
-                        try:
-                            await parent_wrapper.click(force=True, timeout=2000)
-                        except Exception:
-                            pass
                     matched = True
                     break
 
             if not matched:
                 opt_label = container.get_by_text(item, exact=False).first
                 if await opt_label.count() > 0:
-                    await opt_label.scroll_into_view_if_needed()
                     try:
+                        await opt_label.scroll_into_view_if_needed(timeout=2000)
                         await opt_label.click(force=True, timeout=2000)
                     except Exception:
                         pass
@@ -636,18 +727,24 @@ class FormFiller:
                 options = self.page.locator('[role="option"]')
                 count = await options.count()
 
-            # 1. Exact match pass (with and without diacritics)
+            # 1. Exact & Substring match pass (with and without diacritics)
             for i in range(count):
                 opt = options.nth(i)
                 txt = (await opt.inner_text()).lower().strip()
                 txt_nd = strip_diacritics(txt)
-                if txt == target_clean or txt_nd == target_nd:
+                if txt in ("alege", "choose", "выбрать", "--", "", "select"):
+                    continue
+                if txt == target_clean or txt_nd == target_nd or target_clean in txt or target_nd in txt_nd or txt in target_clean:
                     try:
                         await opt.scroll_into_view_if_needed()
-                        await opt.click(force=True, timeout=3000)
+                        await opt.click(force=True, timeout=2000)
                         return
                     except Exception:
-                        pass
+                        try:
+                            await opt.evaluate("el => { el.click(); el.dispatchEvent(new Event('click', {bubbles: true})); }")
+                            return
+                        except Exception:
+                            pass
 
             # 2. Semantic and keyword pass
             best_opt = None
@@ -671,26 +768,26 @@ class FormFiller:
 
                 # Size matches (L, XL, XXL, M, S, 42, 43, 44)
                 if len(target_clean) <= 4:
-                    if txt.startswith(f"{target_clean} ") or txt.startswith(f"{target_clean}-") or f"({target_clean})" in txt or f" {target_clean} " in f" {txt} ":
+                    if target_clean in txt or txt.startswith(f"{target_clean} ") or txt.startswith(f"{target_clean}-") or f"({target_clean})" in txt or f" {target_clean} " in f" {txt} ":
                         best_opt = opt
                         break
 
                 # English level matches
-                if any(w in target_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar")):
-                    if any(w in txt_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов")):
+                if any(w in target_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов")):
+                    if any(w in txt_nd for w in ("incepator", "basic", "beginner", "a1", "a2", "elementar", "начальн", "базов", "1", "a1")):
                         best_opt = opt
                         break
-                elif any(w in target_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational")):
-                    if any(w in txt_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн")):
+                elif any(w in target_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн")):
+                    if any(w in txt_nd for w in ("mediu", "intermediate", "b1", "b2", "conversational", "средн", "2", "b1")):
                         best_opt = opt
                         break
-                elif any(w in target_nd for w in ("avansat", "advanced", "c1", "c2", "fluent")):
-                    if any(w in txt_nd for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
+                elif any(w in target_nd for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут")):
+                    if any(w in txt_nd for w in ("avansat", "advanced", "c1", "c2", "fluent", "свободн", "продвинут", "3", "c1")):
                         best_opt = opt
                         break
 
                 # Driving license category matches
-                if any(w in target_nd for w in ("categoria b", "category b", "cat b", "b", "car", "autoturism")):
+                if any(w in target_nd for w in ("categoria b", "category b", "cat b", "b", "car", "autoturism", "легков")):
                     if any(w in txt_nd for w in ("categoria b", "category b", "cat b", "(b)", "car", "autoturism", "легков")):
                         best_opt = opt
                         break
@@ -732,17 +829,26 @@ class FormFiller:
                     await best_opt.click(force=True, timeout=3000)
                     return
                 except Exception:
-                    pass
+                    try:
+                        await best_opt.evaluate("el => { el.click(); el.dispatchEvent(new Event('click', {bubbles: true})); }")
+                        return
+                    except Exception:
+                        pass
 
             # 3. Fallback for required dropdown: pick first non-placeholder option
             if field.required and count > 1:
                 logger.warning(f"Selecting first valid option for required dropdown '{field.label}'")
                 try:
-                    await options.nth(1).scroll_into_view_if_needed()
-                    await options.nth(1).click(force=True, timeout=3000)
+                    opt_target = options.nth(1)
+                    await opt_target.scroll_into_view_if_needed()
+                    await opt_target.click(force=True, timeout=3000)
                     return
                 except Exception:
-                    pass
+                    try:
+                        await options.nth(1).evaluate("el => { el.click(); el.dispatchEvent(new Event('click', {bubbles: true})); }")
+                        return
+                    except Exception:
+                        pass
 
         logger.warning(f"Could not select dropdown option '{option_text}' in field '{field.label}'")
 

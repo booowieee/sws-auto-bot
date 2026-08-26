@@ -2423,4 +2423,26 @@ terms_agreement:
     - 'прочитал\s*[иi]\s*согласен'
   profile_key: compliance.terms_agreement
 
+willing_overtime:
+  keywords:
+    - "sunteti dispus sa lucrati ore suplimentare"
+    - "sunteti dispus(a) sa lucrati ore suplimentare"
+    - "sunteti dispusa sa lucrati ore suplimentare"
+    - "dispus sa lucrati ore suplimentare"
+    - "ore suplimentare"
+    - "willing to work overtime"
+    - "work overtime"
+    - "overtime hours"
+    - "готов работать сверхурочно"
+    - "сверхурочные часы"
+    - "готовность к переработкам"
+  patterns:
+    - 'ore\s*suplimentare'
+    - 'dispus.*suplimentar'
+    - 'overtime'
+    - 'сверхурочн'
+    - 'переработк'
+  profile_key: work.willing_overtime
+
+
 

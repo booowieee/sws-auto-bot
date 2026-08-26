@@ -203,8 +203,10 @@ class FormAnalyzer:
         if file_input:
             return FieldType.FILE_UPLOAD, []
 
-        # 7. Text input
-        text_input = await container.query_selector('input[type="text"], input:not([type])')
+        # 7. Text / Email / Phone / Number inputs
+        text_input = await container.query_selector(
+            'input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="url"], input.whsOnd, input:not([type])'
+        )
         if text_input:
             return FieldType.TEXT, []
 
